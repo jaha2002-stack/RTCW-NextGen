@@ -1,0 +1,12 @@
+name: P00 engineering artifact
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/rtcwnextgen-prototype'
+    uses: ./.github/workflows/windows-build.yml
