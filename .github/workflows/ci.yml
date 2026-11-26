@@ -1,4 +1,4 @@
-name: Phase P00 CI
+name: Windows DX12 CI
 
 on:
   pull_request:

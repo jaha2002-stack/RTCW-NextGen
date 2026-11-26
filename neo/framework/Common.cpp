@@ -72,7 +72,13 @@ struct version_s
 
 idCVar com_version( "si_version", version.string, CVAR_SYSTEM | CVAR_ROM | CVAR_SERVERINFO, "engine version" );
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD" );
-static idCVar com_renderSmoke( "com_renderSmoke", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_INIT, "draw a synthetic renderer test pattern and exit before game initialization" );
+static idCVar com_renderSmoke( "com_renderSmoke", "0", CVAR_INTEGER | CVAR_SYSTEM | CVAR_INIT, "draw a synthetic renderer test pattern before game initialization: 1 = capture and exit, 2 = wait for Escape or window close", 0, 2 );
+static bool renderSmokeQuitRequested;
+
+static void RenderSmokeQuit_f( const idCmdArgs& )
+{
+	renderSmokeQuitRequested = true;
+}
 
 // RB: not allowing the console is a bit harsh for shipping builds
 #if 0 //def ID_RETAIL
@@ -1314,17 +1320,64 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 				Sys_Error( "Missing renderer_smoke/solid material. Start the renderer smoke test with its fixture directory." );
 			}
 			globalImages->LoadDeferredImages();
-			const float halfWidth = renderSystem->GetVirtualWidth() * 0.5f;
-			const float height = renderSystem->GetVirtualHeight();
 			renderSystem->SetGLState( GLS_OVERRIDE | GLS_DEPTHFUNC_ALWAYS );
-			for( int frame = 0; frame < 3; ++frame )
+			const bool interactive = com_renderSmoke.GetInteger() == 2;
+			if( interactive )
 			{
+				// Exit through the smoke test's partial-startup cleanup.
+				cmdSystem->RemoveCommand( "quit" );
+				cmdSystem->AddCommand( "quit", RenderSmokeQuit_f, CMD_FL_SYSTEM, "exit the renderer smoke test" );
+			}
+			int width = 0;
+			int height = 0;
+			int remainingFrames = 3;
+			while( interactive || remainingFrames-- > 0 )
+			{
+				if( interactive )
+				{
+					Sys_GenerateEvents();
+					for( sysEvent_t event = Sys_GetEvent(); event.evType != SE_NONE; event = Sys_GetEvent() )
+					{
+						if( event.IsKeyEvent() && event.evValue == K_ESCAPE && event.evValue2 )
+						{
+							Sys_Printf( "Renderer smoke received Escape\n" );
+							renderSmokeQuitRequested = true;
+						}
+						if( event.evPtr )
+						{
+							if( event.evType == SE_CONSOLE && idStr::Cmp( static_cast<const char*>( event.evPtr ), "quit" ) == 0 )
+							{
+								renderSmokeQuitRequested = true;
+							}
+							Mem_Free( event.evPtr );
+						}
+					}
+					cmdSystem->ExecuteCommandBuffer();
+					if( renderSmokeQuitRequested )
+					{
+						break;
+					}
+				}
+
+				const float halfWidth = renderSystem->GetVirtualWidth() * 0.5f;
+				const float virtualHeight = renderSystem->GetVirtualHeight();
 				renderSystem->SetColor( colorRed );
-				renderSystem->DrawStretchPic( 0, 0, halfWidth, height, 0, 0, 1, 1, smokeMaterial );
+				renderSystem->DrawStretchPic( 0, 0, halfWidth, virtualHeight, 0, 0, 1, 1, smokeMaterial );
 				renderSystem->SetColor( colorBlue );
-				renderSystem->DrawStretchPic( halfWidth, 0, halfWidth, height, 0, 0, 1, 1, smokeMaterial );
+				renderSystem->DrawStretchPic( halfWidth, 0, halfWidth, virtualHeight, 0, 0, 1, 1, smokeMaterial );
 				const emptyCommand_t* commands = renderSystem->SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
 				renderSystem->RenderCommandBuffers( commands );
+
+				if( width != renderSystem->GetWidth() || height != renderSystem->GetHeight() )
+				{
+					width = renderSystem->GetWidth();
+					height = renderSystem->GetHeight();
+					Sys_Printf( "Renderer smoke frame %dx%d\n", width, height );
+				}
+				if( interactive )
+				{
+					Sys_Sleep( 16 );
+				}
 			}
 			renderSystem->SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
 			if( !R_WriteRendererSmokeImage() )
@@ -1336,6 +1389,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 			declManager->Shutdown();
 			renderSystem->Shutdown();
 			soundSystem->Shutdown();
+			CloseLogFile();
 			fileSystem->Shutdown( false );
 			Sys_Printf( "Synthetic renderer smoke test finished\n" );
 			Sys_Quit();

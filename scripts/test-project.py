@@ -37,9 +37,13 @@ class PackageTests(unittest.TestCase):
                 "neo/extern/nvrhi/LICENSE.txt": b"license",
                 "neo/extern/ShaderMake/LICENSE.txt": b"license",
                 "base/default.cfg": b"configuration",
+                "scripts/renderer-smoke.cmd": b"launcher",
+                "tests/fixtures/renderer-smoke.mtr": b"material",
+                "tests/fixtures/renderer_smoke_white.tga": b"texture",
                 "docs/rtcwnextgen/RELEASE-PROCESS.md": b"instructions",
                 "base/renderprogs2/dxil/synthetic.bin": b"shader",
                 "base/pak000.pk4": b"must be excluded",
+                "Main/pak0.pk3": b"must be excluded",
                 "base/game.resources": b"must be excluded",
             }
             for name, data in inputs.items():
@@ -57,6 +61,10 @@ class PackageTests(unittest.TestCase):
                 self.assertEqual(set(archive.namelist()), set(files) | {"SHA256SUMS.txt", "BUILD-MANIFEST.json"})
                 self.assertNotIn("base/pak000.pk4", archive.namelist())
                 self.assertNotIn("base/game.resources", archive.namelist())
+                self.assertNotIn("Main/pak0.pk3", archive.namelist())
+                self.assertEqual(archive.read("Run Renderer Smoke.cmd"), b"launcher")
+                self.assertEqual(archive.read("base/materials/renderer-smoke.mtr"), b"material")
+                self.assertEqual(archive.read("base/textures/renderer_smoke_white.tga"), b"texture")
             (root / "base/renderprogs2/dxil/synthetic.bin").unlink()
             with self.assertRaisesRegex(ValueError, "DXIL"):
                 PACKAGE.collect(root, build)

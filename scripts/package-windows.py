@@ -1,4 +1,4 @@
-"""Build the asset-free P00 engineering ZIP from a Windows Release build."""
+"""Build the renderer smoke engineering ZIP from a Windows Release build."""
 
 import argparse
 import hashlib
@@ -47,6 +47,9 @@ def collect(root, build):
         "neo/extern/nvrhi/LICENSE.txt": "licenses/NVRHI.txt",
         "neo/extern/ShaderMake/LICENSE.txt": "licenses/ShaderMake.txt",
         "base/default.cfg": "base/default.cfg",
+        "scripts/renderer-smoke.cmd": "Run Renderer Smoke.cmd",
+        "tests/fixtures/renderer-smoke.mtr": "base/materials/renderer-smoke.mtr",
+        "tests/fixtures/renderer_smoke_white.tga": "base/textures/renderer_smoke_white.tga",
         "docs/rtcwnextgen/RELEASE-PROCESS.md": "README.md",
     }.items():
         files[destination] = read_input(root / source)
@@ -101,7 +104,7 @@ def main():
     if not submodules or any(line[0] != " " for line in submodules):
         raise ValueError("Initialize all submodules at their pinned commits")
     manifest = {
-        "scope": "P00 upstream engine baseline",
+        "scope": "P01 renderer smoke test",
         "source_sha": sha,
         "upstream_sha": UPSTREAM,
         "submodules": {line.split()[1]: line.split()[0] for line in submodules},
@@ -110,7 +113,7 @@ def main():
         "backend": "DX12 / DXIL",
         "platform": "Windows x64",
     }
-    output = args.out / f"RTCW-NextGen-P00-{sha[:12]}-win-x64.zip"
+    output = args.out / f"RTCW-NextGen-P01-{sha[:12]}-win-x64.zip"
     write_package(output, collect(ROOT, ROOT / "build-windows"), manifest)
     print(output)
 
