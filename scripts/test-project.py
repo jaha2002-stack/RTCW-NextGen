@@ -37,10 +37,13 @@ class PackageTests(unittest.TestCase):
                 "neo/extern/nvrhi/LICENSE.txt": b"license",
                 "neo/extern/ShaderMake/LICENSE.txt": b"license",
                 "base/default.cfg": b"configuration",
+                "scripts/play-signal-room.cmd": b"game launcher",
                 "scripts/renderer-smoke.cmd": b"launcher",
                 "tests/fixtures/renderer-smoke.mtr": b"material",
+                "tests/fixtures/signal-room.mtr": b"room material",
                 "tests/fixtures/renderer_smoke_white.tga": b"texture",
                 "docs/rtcwnextgen/RELEASE-PROCESS.md": b"instructions",
+                "docs/rtcwnextgen/SIGNAL-ROOM-TEST-CARD.md": b"test card",
                 "base/renderprogs2/dxil/synthetic.bin": b"shader",
                 "base/pak000.pk4": b"must be excluded",
                 "Main/pak0.pk3": b"must be excluded",
@@ -62,9 +65,12 @@ class PackageTests(unittest.TestCase):
                 self.assertNotIn("base/pak000.pk4", archive.namelist())
                 self.assertNotIn("base/game.resources", archive.namelist())
                 self.assertNotIn("Main/pak0.pk3", archive.namelist())
+                self.assertEqual(archive.read("Play Signal Room.cmd"), b"game launcher")
                 self.assertEqual(archive.read("Run Renderer Smoke.cmd"), b"launcher")
                 self.assertEqual(archive.read("base/materials/renderer-smoke.mtr"), b"material")
+                self.assertEqual(archive.read("base/materials/signal-room.mtr"), b"room material")
                 self.assertEqual(archive.read("base/textures/renderer_smoke_white.tga"), b"texture")
+                self.assertEqual(archive.read("TEST-CARD.md"), b"test card")
             (root / "base/renderprogs2/dxil/synthetic.bin").unlink()
             with self.assertRaisesRegex(ValueError, "DXIL"):
                 PACKAGE.collect(root, build)

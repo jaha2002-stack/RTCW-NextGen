@@ -1,0 +1,9 @@
+signal_room/solid
+{
+	twoSided
+	noShadows
+	{
+		map textures/renderer_smoke_white
+		vertexColor
+	}
+}

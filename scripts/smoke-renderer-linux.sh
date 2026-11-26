@@ -21,21 +21,36 @@ export VK_DRIVER_FILES="$prefix/share/vulkan/icd.d/lvp_icd.json"
 export XDG_RUNTIME_DIR="$run_dir/runtime" XDG_CACHE_HOME="$run_dir/cache" XDG_DATA_HOME="$run_dir/data"
 validation=${RTCW_SMOKE_VK_VALIDATION:-1}
 mode=1
+signal_room=0
+run_timeout=30s
 launcher=(sh -c 'xdpyinfo >/dev/null && exec "$@"' sh)
 if [[ "${1:-}" == --window-events && "$#" == 1 ]]; then
     mode=2
     launcher=(bash "$root/tests/renderer-smoke-window-events.sh" "$run_dir/engine.log")
+elif [[ "${1:-}" == --signal-room && "$#" == 1 ]]; then
+    mode=0
+    signal_room=1
+    run_timeout=60s
+    cp "$root/base/default.cfg" "$run_dir/fixture/base/default.cfg"
+    cp "$root/tests/fixtures/signal-room.mtr" "$run_dir/fixture/base/materials/"
+    launcher=(bash "$root/tests/signal-room-playthrough.sh" "$run_dir/engine.log")
 elif (( $# != 0 )); then
-    echo "Usage: $0 [--window-events]" >&2
+    echo "Usage: $0 [--window-events | --signal-room]" >&2
     exit 2
 fi
-timeout --kill-after=5s 30s xvfb-run -a -e "$run_dir/xvfb.log" -s '-screen 0 800x600x24 -noreset' \
+if timeout --kill-after=5s "$run_timeout" xvfb-run -a -e "$run_dir/xvfb.log" -s '-screen 0 800x600x24 -noreset' \
     "${launcher[@]}" "$root/build-cloud/RBDoom3BFG" \
     +set fs_basepath "$run_dir/fixture" +set fs_savepath "$run_dir/save" \
     +set r_fullscreen 0 +set r_windowWidth 640 +set r_windowHeight 480 \
-    +set s_noSound 1 +set logFile 2 +set com_renderSmoke "$mode" +set r_useValidationLayers "$validation" > "$run_dir/engine.log" 2>&1
+    +set s_noSound 1 +set logFile 2 +set com_renderSmoke "$mode" +set com_signalRoom "$signal_room" \
+    +set r_useValidationLayers "$validation" > "$run_dir/engine.log" 2>&1; then
+    :
+else
+    result=$?
+    tail -30 "$run_dir/engine.log" >&2
+    exit "$result"
+fi
 
-grep -F 'Synthetic renderer smoke test finished' "$run_dir/engine.log"
 test -s "$run_dir/save/base/qconsole.log"
 if [[ "$validation" == 2 ]]; then
     grep -F 'VK_LAYER_KHRONOS_validation' "$run_dir/engine.log"
@@ -43,6 +58,21 @@ if [[ "$validation" == 2 ]]; then
         exit 1
     fi
 fi
+if [[ "$signal_room" == 1 ]]; then
+    grep -F 'Signal Room: clean shutdown' "$run_dir/engine.log"
+    image="$run_dir/save/base/screenshots/signal-room.png"
+    [[ $(magick identify -format '%wx%h' "$image") == 640x480 ]]
+    # Check an area outside the HUD so UI over a black scene fails this test.
+    scene=$(magick "$image" -crop 640x106+0+74 +repage -format '%[fx:mean>0.12]' info:)
+    if [[ "$scene" != 1 ]]; then
+        echo "Expected a visible room behind the HUD in $image" >&2
+        exit 1
+    fi
+    printf 'Verified Signal Room frame in %s\n' "$image"
+    exit 0
+fi
+
+grep -F 'Synthetic renderer smoke test finished' "$run_dir/engine.log"
 image="$run_dir/save/base/screenshots/renderer-smoke.png"
 if [[ "$mode" == 2 ]]; then
     grep -Fx 'Renderer smoke received Escape' "$run_dir/engine.log"

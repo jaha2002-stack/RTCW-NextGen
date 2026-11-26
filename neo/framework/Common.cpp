@@ -34,13 +34,14 @@ If you have questions concerning this license or the applicable additional terms
 #include "Common_local.h"
 
 #include "ConsoleHistory.h"
+#include "SignalRoom.h"
 
 #include "../renderer/GLState.h"
 #include "../sound/sound.h"
 
 #include <sys/DeviceManager.h>
 extern DeviceManager* deviceManager;
-bool R_WriteRendererSmokeImage();
+bool R_WriteRendererEvidence( const char* filename );
 
 // RB begin
 #if defined(USE_DOOMCLASSIC)
@@ -73,6 +74,7 @@ struct version_s
 idCVar com_version( "si_version", version.string, CVAR_SYSTEM | CVAR_ROM | CVAR_SERVERINFO, "engine version" );
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD" );
 static idCVar com_renderSmoke( "com_renderSmoke", "0", CVAR_INTEGER | CVAR_SYSTEM | CVAR_INIT, "draw a synthetic renderer test pattern before game initialization: 1 = capture and exit, 2 = wait for Escape or window close", 0, 2 );
+static idCVar com_signalRoom( "com_signalRoom", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_INIT, "run the original Signal Room prototype" );
 static bool renderSmokeQuitRequested;
 
 static void RenderSmokeQuit_f( const idCmdArgs& )
@@ -1293,6 +1295,12 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		// re-override anything from the config files with command line args
 		StartupVariable( NULL );
+		const bool playingSignalRoom = com_signalRoom.GetBool();
+		if( playingSignalRoom )
+		{
+			// This startup path does not initialize the game session or its temporal history.
+			cvarSystem->SetCVarInteger( "r_antiAliasing", 0 );
+		}
 
 		// if any archived cvars are modified after this, we will trigger a writing of the config file
 		cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
@@ -1310,9 +1318,12 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		// initialize the renderSystem data structures
 		renderSystem->Init();
 
-		whiteMaterial = declManager->FindMaterial( "_white" );
-
-		if( com_renderSmoke.GetBool() )
+		const bool runningRendererSmoke = com_renderSmoke.GetBool();
+		if( playingSignalRoom )
+		{
+			RunSignalRoom();
+		}
+		else if( runningRendererSmoke )
 		{
 			const idMaterial* smokeMaterial = declManager->FindMaterial( "renderer_smoke/solid", false );
 			if( !smokeMaterial )
@@ -1380,10 +1391,13 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 				}
 			}
 			renderSystem->SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
-			if( !R_WriteRendererSmokeImage() )
+			if( !R_WriteRendererEvidence( "screenshots/renderer-smoke.png" ) )
 			{
 				Sys_Error( "Could not read the synthetic renderer smoke test frame" );
 			}
+		}
+		if( playingSignalRoom || runningRendererSmoke )
+		{
 			eventLoop->Shutdown();
 			fileSystem->EndLevelLoad();
 			declManager->Shutdown();
@@ -1391,10 +1405,12 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 			soundSystem->Shutdown();
 			CloseLogFile();
 			fileSystem->Shutdown( false );
-			Sys_Printf( "Synthetic renderer smoke test finished\n" );
+			Sys_Printf( "%s\n", playingSignalRoom ? "Signal Room: clean shutdown" : "Synthetic renderer smoke test finished" );
 			Sys_Quit();
 			return;
 		}
+
+		whiteMaterial = declManager->FindMaterial( "_white" );
 
 		if( idStr::Icmp( sys_lang.GetString(), ID_LANG_FRENCH ) == 0 )
 		{

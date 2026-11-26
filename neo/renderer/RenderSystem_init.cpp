@@ -909,11 +909,11 @@ bool R_ReadPixelsRGB8( nvrhi::IDevice* device, CommonRenderPasses* pPasses, nvrh
 	return R_ReadPixelsRGB8ToPath( device, pPasses, texture, textureState, fullname, basePath );
 }
 
-bool R_WriteRendererSmokeImage()
+bool R_WriteRendererEvidence( const char* filename )
 {
 	return R_ReadPixelsRGB8ToPath( deviceManager->GetDevice(), &backEnd.GetCommonPasses(),
 								  globalImages->ldrImage->GetTextureHandle(), nvrhi::ResourceStates::RenderTarget,
-								  "screenshots/renderer-smoke.png", "fs_savepath" );
+								  filename, "fs_savepath" );
 }
 
 bool R_ReadPixelsRGB16F( nvrhi::IDevice* device, CommonRenderPasses* pPasses, nvrhi::ITexture* texture, nvrhi::ResourceStates textureState, byte** pic, int picWidth, int picHeight )
