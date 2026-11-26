@@ -11,6 +11,8 @@ import tempfile
 import unittest
 import zipfile
 
+import rtcw_data
+
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("package_windows", Path(__file__).with_name("package-windows.py"))
 PACKAGE = importlib.util.module_from_spec(SPEC)
@@ -91,6 +93,39 @@ class MapCompilerTests(unittest.TestCase):
             self.assertTrue(proc.is_file() and collision.is_file(), result.stdout + result.stderr)
             self.assertIn(b"_area0", proc.read_bytes())
             self.assertTrue(collision.read_bytes().startswith(b'CM "1.00"'))
+
+
+class RTCWDataTests(unittest.TestCase):
+    def test_inventory_is_read_only(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            main = root / "mAiN"
+            main.mkdir()
+            for name in rtcw_data.REQUIRED:
+                with zipfile.ZipFile(main / name.upper(), "w") as archive:
+                    archive.writestr("synthetic.txt", "test")
+                    if name == "pak0.pk3":
+                        archive.writestr("Maps/Escape1.BSP", "synthetic fixture")
+            before = {path.name: path.read_bytes() for path in main.iterdir()}
+            messages, ready = rtcw_data.inspect(root)
+            self.assertTrue(ready, messages)
+            self.assertIn("maps/escape1.bsp: present in pak0.pk3", messages)
+            self.assertEqual(rtcw_data.inspect(main), (messages, ready))
+            self.assertEqual({path.name: path.read_bytes() for path in main.iterdir()}, before)
+
+    def test_inventory_reports_missing_and_invalid_archives(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            main = Path(temporary) / "Main"
+            main.mkdir()
+            (main / "pak0.pk3").write_bytes(b"invalid ZIP")
+            with zipfile.ZipFile(main / "sp_pak1.pk3", "w"):
+                pass
+            messages, ready = rtcw_data.inspect(main)
+            self.assertFalse(ready)
+            self.assertTrue(any(line.startswith("pak0.pk3: cannot read PK3 directory") for line in messages))
+            self.assertIn("sp_pak1.pk3: no file entries", messages)
+            self.assertIn("sp_pak2.pk3: missing file", messages)
+            self.assertIn("maps/escape1.bsp: absent from the inspected archives", messages)
 
 
 if __name__ == "__main__":

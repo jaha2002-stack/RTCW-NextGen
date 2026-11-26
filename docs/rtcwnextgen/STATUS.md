@@ -1,13 +1,14 @@
 # RTCW NextGen — состояние проекта
 
-- Дата и задача — 26.11.2026, P00.1–P00.3.
+- Дата и задача — 26.11.2026, P00.1–P00.3 и P01-T01 (инвентаризация установки).
 - Интеграционная ветка — `rtcwnextgen-prototype`, от `ea6b8ccce796289cb91fe2447b733e56cb12d817` (`master`). SHA рабочей ревизии определяется по `git rev-parse HEAD`.
 - Ревизии движка и зависимостей зафиксированы в [ADR 0001](adr/0001-upstream-baseline.md).
-- Состояние — локальная проверка baseline пройдена в Linux, Windows CI и проверка реального Windows ZIP ожидают запуска.
+- Состояние P00 — AUTO_VERIFIED для исходного baseline. [Windows CI](https://github.com/jaha2002-stack/RTCW-NextGen/actions/runs/45848446252) подтвердил Release x64, DX12/DXIL, три функциональные проверки, распаковку и SHA-256 Windows ZIP на коммите `015972ee7366dc0ea04d58b1c2ee87f251a5e469`. Артефакт GitHub Actions имеет SHA-256 `ba0543cf6e36fd4edbdedbdf414004a2edd02d86f04faa5a62b16c54198557fb`. Внутренний ZIP сопровождается отдельным файлом `.zip.sha256`.
 - Добавлены сборка Windows DX12, GitHub Actions с правами чтения, контролируемая упаковка Windows ZIP и автоматические проверки.
 - Linux Release собрал `RBDoom3BFG` и `rbdmap`. В чистой проверенной сборке облачной среды DXC выполнил 749 задач SPIR-V.
-- `python3 -B scripts/test-project.py --rbdmap build-cloud/tools/compilers/rbdmap` — 3 теста прошли. Проверены создание BSP и коллизий, выбор файлов для ZIP, чистая распаковка и SHA-256 на синтетических входах.
+- `python3 -B scripts/test-project.py --rbdmap build-cloud/tools/compilers/rbdmap` — 5 тестов пройдены. Проверены создание BSP и коллизий, выбор файлов для ZIP, чистая распаковка и SHA-256, а также синтетические PK3.
 - `actionlint` и `git diff --check` — пройдены.
 - Vulkan через Xvfb/Mesa llvmpipe загрузил шейдеры и инициализировал рендерер. Полный запуск завершился с кодом 1 при загрузке `Arial_Narrow`. Аппаратный GPU/DX12 и игровая приёмка — NOT_RUN.
 - Игровые кандидаты и приёмка — ожидают будущего игрового этапа. Список ресурсов приведён в [TESTING](TESTING.md).
-- **NEXT_TASK P00-T04** — выполнить Windows CI на проверяемом коммите, подтвердить Release и DXIL, запуск `rbdmap` на runner, ZIP и SHA-256. После прохождения P00 переходить к P01 согласно [Handoff](HANDOFF.md).
+- P01-T01 — `scripts/rtcw_data.py` читает директории PK3 и определяет наличие первой карты. Тесты покрывают чтение с различным регистром имён, сохранность архивов и диагностику отсутствующего, повреждённого и пустого PK3. Реальные ресурсы — NOT_RUN (лицензионная установка не подключена).
+- **NEXT_TASK P01-T02** — реализовать тестовый startup с оригинальной синтетической сценой и отдельным writable каталогом. Проверить запуск, кадр и закрытие без данных, которые требуются upstream Doom 3 BFG.
