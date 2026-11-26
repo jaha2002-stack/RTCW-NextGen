@@ -1,0 +1,14 @@
+_default
+{
+	{
+		map _default
+	}
+}
+
+_white
+{
+	{
+		map _white
+		vertexColor
+	}
+}

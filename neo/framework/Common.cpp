@@ -35,10 +35,12 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "ConsoleHistory.h"
 
+#include "../renderer/GLState.h"
 #include "../sound/sound.h"
 
 #include <sys/DeviceManager.h>
 extern DeviceManager* deviceManager;
+bool R_WriteRendererSmokeImage();
 
 // RB begin
 #if defined(USE_DOOMCLASSIC)
@@ -70,6 +72,7 @@ struct version_s
 
 idCVar com_version( "si_version", version.string, CVAR_SYSTEM | CVAR_ROM | CVAR_SERVERINFO, "engine version" );
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD" );
+static idCVar com_renderSmoke( "com_renderSmoke", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_INIT, "draw a synthetic renderer test pattern and exit before game initialization" );
 
 // RB: not allowing the console is a bit harsh for shipping builds
 #if 0 //def ID_RETAIL
@@ -1302,6 +1305,37 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		renderSystem->Init();
 
 		whiteMaterial = declManager->FindMaterial( "_white" );
+
+		if( com_renderSmoke.GetBool() )
+		{
+			globalImages->LoadDeferredImages();
+			const float halfWidth = renderSystem->GetVirtualWidth() * 0.5f;
+			const float height = renderSystem->GetVirtualHeight();
+			renderSystem->SetGLState( GLS_OVERRIDE | GLS_DEPTHFUNC_ALWAYS );
+			for( int frame = 0; frame < 3; ++frame )
+			{
+				renderSystem->SetColor( colorRed );
+				renderSystem->DrawStretchPic( 0, 0, halfWidth, height, 0, 0, 1, 1, whiteMaterial );
+				renderSystem->SetColor( colorBlue );
+				renderSystem->DrawStretchPic( halfWidth, 0, halfWidth, height, 0, 0, 1, 1, whiteMaterial );
+				const emptyCommand_t* commands = renderSystem->SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+				renderSystem->RenderCommandBuffers( commands );
+			}
+			renderSystem->SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
+			if( !R_WriteRendererSmokeImage() )
+			{
+				Sys_Error( "Could not read the synthetic renderer smoke test frame" );
+			}
+			eventLoop->Shutdown();
+			fileSystem->EndLevelLoad();
+			declManager->Shutdown();
+			renderSystem->Shutdown();
+			soundSystem->Shutdown();
+			fileSystem->Shutdown( false );
+			Sys_Printf( "Synthetic renderer smoke test finished\n" );
+			Sys_Quit();
+			return;
+		}
 
 		if( idStr::Icmp( sys_lang.GetString(), ID_LANG_FRENCH ) == 0 )
 		{

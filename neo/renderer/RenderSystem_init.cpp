@@ -801,7 +801,7 @@ void R_ReportSurfaceAreas_f( const idCmdArgs& args )
 ==============================================================================
 */
 
-bool R_ReadPixelsRGB8( nvrhi::IDevice* device, CommonRenderPasses* pPasses, nvrhi::ITexture* texture, nvrhi::ResourceStates textureState, const char* fullname )
+static bool R_ReadPixelsRGB8ToPath( nvrhi::IDevice* device, CommonRenderPasses* pPasses, nvrhi::ITexture* texture, nvrhi::ResourceStates textureState, const char* fullname, const char* basePath )
 {
 	nvrhi::TextureDesc desc = texture->getDesc();
 	nvrhi::TextureHandle tempTexture;
@@ -885,12 +885,7 @@ bool R_ReadPixelsRGB8( nvrhi::IDevice* device, CommonRenderPasses* pPasses, nvrh
 		data[ i * 4 + 3 ] = 0xff;
 	}
 
-	// SRS - Save screen shots to fs_savepath on macOS (i.e. don't save into an app bundle's basepath)
-#if defined(__APPLE__)
-	R_WritePNG( fullname, static_cast<byte*>( pData ), 4, desc.width, desc.height, "fs_savepath" );
-#else
-	R_WritePNG( fullname, static_cast<byte*>( pData ), 4, desc.width, desc.height, "fs_basepath" );
-#endif
+	R_WritePNG( fullname, static_cast<byte*>( pData ), 4, desc.width, desc.height, basePath );
 
 	if( newData )
 	{
@@ -901,6 +896,24 @@ bool R_ReadPixelsRGB8( nvrhi::IDevice* device, CommonRenderPasses* pPasses, nvrh
 	device->unmapStagingTexture( stagingTexture );
 
 	return true;
+}
+
+bool R_ReadPixelsRGB8( nvrhi::IDevice* device, CommonRenderPasses* pPasses, nvrhi::ITexture* texture, nvrhi::ResourceStates textureState, const char* fullname )
+{
+	// Use the writable path for macOS app bundles.
+#if defined(__APPLE__)
+	const char* basePath = "fs_savepath";
+#else
+	const char* basePath = "fs_basepath";
+#endif
+	return R_ReadPixelsRGB8ToPath( device, pPasses, texture, textureState, fullname, basePath );
+}
+
+bool R_WriteRendererSmokeImage()
+{
+	return R_ReadPixelsRGB8ToPath( deviceManager->GetDevice(), &backEnd.GetCommonPasses(),
+								  globalImages->ldrImage->GetTextureHandle(), nvrhi::ResourceStates::RenderTarget,
+								  "screenshots/renderer-smoke.png", "fs_savepath" );
 }
 
 bool R_ReadPixelsRGB16F( nvrhi::IDevice* device, CommonRenderPasses* pPasses, nvrhi::ITexture* texture, nvrhi::ResourceStates textureState, byte** pic, int picWidth, int picHeight )
