@@ -104,6 +104,42 @@ class MapCompilerTests(unittest.TestCase):
 
 
 class RTCWDataTests(unittest.TestCase):
+    def test_locate_respects_single_player_precedence(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            main = Path(temporary) / "Main"
+            main.mkdir()
+            for name, entry in (
+                ("z_override.pk3", "maps/fixture.bsp"),
+                ("SP_PAK2.PK3", "Maps/Fixture.bsp"),
+                ("sp_pak3.pk3", "MAPS/FIXTURE.BSP"),
+                ("mp_override.pk3", "maps/multiplayer.bsp"),
+            ):
+                with zipfile.ZipFile(main / name, "w") as archive:
+                    archive.writestr(entry, "synthetic test data")
+            folder = main / "Maps"
+            folder.mkdir()
+            (folder / "fixture.bsp").write_text("loose copy")
+            loose = folder / "extra.bsp"
+            loose.write_text("loose only")
+
+            self.assertEqual(
+                rtcw_data.locate_resource(main, "maps\\fixture.bsp"),
+                ((main / "sp_pak3.pk3").resolve(), "MAPS/FIXTURE.BSP"),
+            )
+            self.assertEqual(rtcw_data.locate_resource(main, "MAPS/extra.bsp"), (loose.resolve(), None))
+            self.assertIsNone(rtcw_data.locate_resource(main, "maps/multiplayer.bsp"))
+
+    def test_locate_rejects_unsafe_paths_and_invalid_packs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            main = Path(temporary) / "Main"
+            main.mkdir()
+            (main / "pak0.pk3").write_bytes(b"invalid ZIP")
+            for target in ("../outside.txt", "/etc/example", "C:\\temp\\example", "maps//fixture.bsp"):
+                with self.subTest(target=target), self.assertRaisesRegex(ValueError, "relative resource path"):
+                    rtcw_data.locate_resource(main, target)
+            with self.assertRaisesRegex(ValueError, "cannot read PK3 directory"):
+                rtcw_data.locate_resource(main, "maps/fixture.bsp")
+
     def test_inventory_is_read_only(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -57,11 +57,67 @@ def inspect(installation):
     return messages, ready
 
 
+def locate_resource(installation, resource):
+    """Find the winning PK3 member or loose file in one offline Main directory."""
+    parts = resource.replace("\\", "/").split("/")
+    if any(part in ("", ".", "..") or ":" in part or "\0" in part for part in parts):
+        raise ValueError("Expected a relative resource path inside Main")
+    parts = [part.casefold() for part in parts]
+    key = "/".join(parts)
+    main = find_main(installation).resolve()
+
+    packs = {}
+    for path in main.iterdir():
+        name = path.name.casefold()
+        if name.startswith("mp_") or path.suffix.casefold() != ".pk3" or not path.is_file():
+            continue
+        if not path.resolve().is_relative_to(main):
+            continue
+        if name in packs:
+            raise ValueError(f"Ambiguous PK3 filename: {path.name}")
+        packs[name] = path
+
+    # RTCW single-player sorts sp_* as zz_* and searches higher-sorted packs first.
+    ordered = sorted(
+        packs, key=lambda name: ("zz" + name[2:] if name.startswith("sp_") else name, name), reverse=True
+    )
+    for name in ordered:
+        path = packs[name]
+        try:
+            with zipfile.ZipFile(path, "r") as archive:
+                for entry in reversed(archive.infolist()):
+                    if not entry.is_dir() and entry.filename.replace("\\", "/").casefold() == key:
+                        return path, entry.filename
+        except (UnicodeError, zipfile.BadZipFile) as error:
+            raise ValueError(f"{path.name}: cannot read PK3 directory ({error})") from error
+
+    loose = main
+    for part in parts:
+        if not loose.is_dir():
+            return None
+        matches = [child for child in loose.iterdir() if child.name.casefold() == part]
+        if len(matches) > 1:
+            raise ValueError(f"Ambiguous loose file path: {resource}")
+        if not matches or not matches[0].resolve().is_relative_to(main):
+            return None
+        loose = matches[0]
+    return (loose, None) if loose.is_file() else None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("installation", type=Path, help="installation root or its Main directory")
+    parser.add_argument("--locate", metavar="RESOURCE", help="report the source of a resource inside Main")
     args = parser.parse_args()
     try:
+        if args.locate is not None:
+            located = locate_resource(args.installation, args.locate)
+            if located is None:
+                print(f"{args.locate}: resource not found", file=sys.stderr)
+                return 1
+            path, entry = located
+            print(f"{path.name}:{entry}" if entry is not None else str(path))
+            return 0
         messages, ready = inspect(args.installation)
     except (OSError, ValueError) as error:
         print(error, file=sys.stderr)
