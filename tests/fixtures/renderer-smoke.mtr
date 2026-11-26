@@ -5,10 +5,10 @@ _default
 	}
 }
 
-_white
+renderer_smoke/solid
 {
 	{
-		map _white
+		map textures/renderer_smoke_white
 		vertexColor
 	}
 }

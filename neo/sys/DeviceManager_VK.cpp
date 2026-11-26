@@ -1485,7 +1485,8 @@ void DeviceManager_VK::DestroyDeviceAndSwapChain()
 
 	m_FrameWaitQuery = nullptr;
 
-	for( int i = 0; i < m_SwapChainImages.size(); i++ )
+	// Swapchain recreation can change the image count without replacing the semaphore queue.
+	while( !m_PresentSemaphoreQueue.empty() )
 	{
 		m_VulkanDevice.destroySemaphore( m_PresentSemaphoreQueue.front() );
 		m_PresentSemaphoreQueue.pop();

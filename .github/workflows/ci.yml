@@ -3,7 +3,7 @@ name: Phase P00 CI
 on:
   pull_request:
   push:
-    branches: [master, rtcwnextgen-prototype]
+    branches: [master, rtcwnextgen-prototype, rtcwnextgen/phase-p01-renderer-smoke]
   workflow_dispatch:
 
 permissions:

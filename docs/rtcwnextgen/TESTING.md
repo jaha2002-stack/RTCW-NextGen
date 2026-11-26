@@ -26,6 +26,8 @@ python3 -B scripts/test-project.py --rbdmap build-cloud/tools/compilers/rbdmap
 
 Штатный CMake движка не регистрирует CTest. `scripts/test-project.py` покрывает упаковку и запуск `rbdmap` на исходной синтетической карте. Для полной проверки требуется `--rbdmap`.
 
+После сборки `bash scripts/smoke-renderer-linux.sh` запускает синтетический режим на Vulkan с Mesa llvmpipe и Xvfb. Скрипт проверяет завершение процесса и красную и синюю области в PNG. Для проверки с установленным слоем Vulkan validation задайте `RTCW_SMOKE_VK_VALIDATION=2` и при необходимости укажите путь к JSON слоя через `VK_LAYER_PATH`. Запуск использует временный каталог с двумя синтетическими ресурсами и скомпилированными шейдерами.
+
 ## Игровые ресурсы
 
 - Для сборки и синтетических тестов Phase P00 достаточно checkout и его подмодулей.

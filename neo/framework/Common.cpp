@@ -1308,6 +1308,11 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		if( com_renderSmoke.GetBool() )
 		{
+			const idMaterial* smokeMaterial = declManager->FindMaterial( "renderer_smoke/solid", false );
+			if( !smokeMaterial )
+			{
+				Sys_Error( "Missing renderer_smoke/solid material. Start the renderer smoke test with its fixture directory." );
+			}
 			globalImages->LoadDeferredImages();
 			const float halfWidth = renderSystem->GetVirtualWidth() * 0.5f;
 			const float height = renderSystem->GetVirtualHeight();
@@ -1315,9 +1320,9 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 			for( int frame = 0; frame < 3; ++frame )
 			{
 				renderSystem->SetColor( colorRed );
-				renderSystem->DrawStretchPic( 0, 0, halfWidth, height, 0, 0, 1, 1, whiteMaterial );
+				renderSystem->DrawStretchPic( 0, 0, halfWidth, height, 0, 0, 1, 1, smokeMaterial );
 				renderSystem->SetColor( colorBlue );
-				renderSystem->DrawStretchPic( halfWidth, 0, halfWidth, height, 0, 0, 1, 1, whiteMaterial );
+				renderSystem->DrawStretchPic( halfWidth, 0, halfWidth, height, 0, 0, 1, 1, smokeMaterial );
 				const emptyCommand_t* commands = renderSystem->SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
 				renderSystem->RenderCommandBuffers( commands );
 			}
