@@ -1,5 +1,7 @@
 # RTCW NextGen — Codex Cloud Engineering Handoff
 
+На ветви `rtcwnextgen/stage-ii-native-level-remaster` обновлён объём P01–P06. Текущие задачи и критерии определяют [нативная архитектура](architecture.md), [план](STAGE_II_IMPLEMENTATION_PLAN.md) и [отчёт приёмки](STAGE_II_ACCEPTANCE_REPORT.md). Процедуры сборки, Git и продвижения релиза ниже остаются справочными для этой ветви.
+
 **Версия:** 1.0 · 26.11.2026  
 **Назначение:** исполняемое задание для Codex Cloud, а не только архитектурная концепция.  
 **Основной upstream:** [RobertBeckebans/RBDOOM-3-BFG](https://github.com/RobertBeckebans/RBDOOM-3-BFG)  

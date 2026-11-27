@@ -1,0 +1,24 @@
+entityDef aas_types {
+	"type1" "aas48"
+}
+
+entityDef aas48 {
+	"mins" "-24 -24 0"
+	"maxs" "24 24 72"
+	"usePatches" "0"
+	"writeBrushMap" "0"
+	"playerFlood" "1"
+	"allowSwimReachabilities" "0"
+	"allowFlyReachabilities" "0"
+	"fileExtension" "aas48"
+	"gravity" "0 0 -1050"
+	"maxStepHeight" "18"
+	"maxBarrierHeight" "32"
+	"maxWaterJumpHeight" "20"
+	"maxFallHeight" "64"
+	"minFloorCos" "0.7"
+	"tt_barrierJump" "100"
+	"tt_startCrouching" "100"
+	"tt_waterJump" "100"
+	"tt_startWalkOffLedge" "100"
+}

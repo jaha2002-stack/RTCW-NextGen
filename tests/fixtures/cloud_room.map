@@ -38,7 +38,7 @@ brushDef3
 brushDef3
 {
 ( 1 0 0 -144 ) ( ( 0.03125 0 0 ) ( 0 0.03125 0 ) ) "textures/test/cloud_room" 0 0 0
-( -1 0 0 128 ) ( ( 0.03125 0 0 ) ( 0 0.03125 0 ) ) "textures/test/cloud_room" 0 0 0
+( -1 0 0 128 ) ( ( 0.03125 0 0 ) ( 0 0.03125 0 ) ) "textures/test/cloud_room_panel" 0 0 0
 ( 0 1 0 -144 ) ( ( 0.03125 0 0 ) ( 0 0.03125 0 ) ) "textures/test/cloud_room" 0 0 0
 ( 0 -1 0 -144 ) ( ( 0.03125 0 0 ) ( 0 0.03125 0 ) ) "textures/test/cloud_room" 0 0 0
 ( 0 0 1 -128 ) ( ( 0.03125 0 0 ) ( 0 0.03125 0 ) ) "textures/test/cloud_room" 0 0 0
@@ -70,5 +70,5 @@ brushDef3
 }
 {
 "classname" "info_player_start"
-"origin" "0 0 48"
+"origin" "-40 0 48"
 }

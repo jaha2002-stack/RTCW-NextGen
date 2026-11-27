@@ -48,6 +48,7 @@ def collect(root, build):
         "neo/extern/ShaderMake/LICENSE.txt": "licenses/ShaderMake.txt",
         "base/default.cfg": "base/default.cfg",
         "scripts/renderer-smoke.cmd": "Run Renderer Smoke.cmd",
+        "scripts/compile-native-level.py": "tools/compile-native-level.py",
         "tests/fixtures/renderer-smoke.mtr": "base/materials/renderer-smoke.mtr",
         "tests/fixtures/renderer_smoke_white.tga": "base/textures/renderer_smoke_white.tga",
         "docs/rtcwnextgen/RELEASE-PROCESS.md": "README.md",

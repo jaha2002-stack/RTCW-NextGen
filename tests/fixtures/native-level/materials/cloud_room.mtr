@@ -1,0 +1,31 @@
+_default
+{
+	{
+		map _default
+	}
+}
+
+textures/test/cloud_room
+{
+	forceOpaque
+	noShadows
+	{
+		map textures/renderer_smoke_white
+		color 0.04, 0.15, 0.85, 1
+	}
+}
+
+textures/test/cloud_room_panel
+{
+	forceOpaque
+	noShadows
+	{
+		map textures/renderer_smoke_white
+		color 0.90, 0.05, 0.03, 1
+	}
+}
+
+_tracemodel
+{
+	collision
+}

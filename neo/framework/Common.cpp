@@ -40,7 +40,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <sys/DeviceManager.h>
 extern DeviceManager* deviceManager;
-bool R_WriteRendererSmokeImage();
+bool R_WriteRendererEvidence( const char* filename );
 
 // RB begin
 #if defined(USE_DOOMCLASSIC)
@@ -73,11 +73,70 @@ struct version_s
 idCVar com_version( "si_version", version.string, CVAR_SYSTEM | CVAR_ROM | CVAR_SERVERINFO, "engine version" );
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD" );
 static idCVar com_renderSmoke( "com_renderSmoke", "0", CVAR_INTEGER | CVAR_SYSTEM | CVAR_INIT, "draw a synthetic renderer test pattern before game initialization: 1 = capture and exit, 2 = wait for Escape or window close", 0, 2 );
+static idCVar com_nativeMapPreview( "com_nativeMapPreview", "", CVAR_SYSTEM | CVAR_INIT, "preview an authored native map before game initialization" );
 static bool renderSmokeQuitRequested;
 
 static void RenderSmokeQuit_f( const idCmdArgs& )
 {
 	renderSmokeQuitRequested = true;
+}
+
+static bool FindNativePreviewSpawn( const idMapFile& map, renderView_t& view )
+{
+	for( int i = 0; i < map.GetNumEntities(); ++i )
+	{
+		const idDict& properties = map.GetEntity( i )->epairs;
+		if( idStr::Icmp( properties.GetString( "classname" ), "info_player_start" ) == 0 &&
+			properties.GetVector( "origin", nullptr, view.vieworg ) )
+		{
+			view.viewaxis = idAngles( 0, properties.GetFloat( "angle" ), 0 ).ToMat3();
+			view.vieworg_weapon = view.vieworg;
+			view.viewID = 1;
+			view.fov_x = 90.0f;
+			view.rdflags = RDF_NOAMBIENT | RDF_NOSHADOWS;
+			return true;
+		}
+	}
+	return false;
+}
+
+static void TraceNativePreviewMap( const idMapFile& map, const renderView_t& view )
+{
+	idStr collisionPath = map.GetName();
+	collisionPath.SetFileExtension( ".cm" );
+	if( fileSystem->GetTimestamp( collisionPath ) == FILE_NOT_FOUND_TIMESTAMP )
+	{
+		Sys_Printf( "Native preview collision skipped: missing %s\n", collisionPath.c_str() );
+		return;
+	}
+
+	collisionModelManager->LoadMap( &map, false );
+	const cmHandle_t worldModel = 0;
+	idBounds bounds;
+	if( !collisionModelManager->GetModelBounds( worldModel, bounds ) )
+	{
+		Sys_Error( "No collision model in %s", collisionPath.c_str() );
+	}
+	struct traceRequest_t
+	{
+		const char* name;
+		idVec3 delta;
+	};
+	const traceRequest_t requests[] =
+	{
+		{ "forward", view.viewaxis[0] * 256.0f },
+		{ "down", idVec3( 0, 0, -128 ) },
+		{ "nearby", view.viewaxis[0] * 32.0f }
+	};
+	for( const traceRequest_t& request : requests )
+	{
+		trace_t trace = {};
+		collisionModelManager->Translation( &trace, view.vieworg, view.vieworg + request.delta,
+				nullptr, mat3_identity, CONTENTS_SOLID, worldModel, vec3_origin, mat3_identity );
+		Sys_Printf( "Native collision %s fraction=%.4f endpoint=%.2f %.2f %.2f\n",
+					request.name, trace.fraction, trace.endpos.x, trace.endpos.y, trace.endpos.z );
+	}
+	collisionModelManager->FreeMap();
 }
 
 // RB: not allowing the console is a bit harsh for shipping builds
@@ -1293,6 +1352,17 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		// re-override anything from the config files with command line args
 		StartupVariable( NULL );
+		const char* previewPath = com_nativeMapPreview.GetString();
+		const bool nativePreview = previewPath[0] != '\0';
+		if( nativePreview )
+		{
+			if( !declManager->FindMaterial( "_default", false ) )
+			{
+				Sys_Error( "Native map preview requires a _default material in the level's materials directory" );
+			}
+			// The preview has no game session or temporal history.
+			cvarSystem->SetCVarInteger( "r_antiAliasing", 0 );
+		}
 
 		// if any archived cvars are modified after this, we will trigger a writing of the config file
 		cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
@@ -1312,15 +1382,37 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 
 		whiteMaterial = declManager->FindMaterial( "_white" );
 
-		if( com_renderSmoke.GetBool() )
+		if( nativePreview || com_renderSmoke.GetBool() )
 		{
-			const idMaterial* smokeMaterial = declManager->FindMaterial( "renderer_smoke/solid", false );
-			if( !smokeMaterial )
+			idRenderWorld* previewWorld = nullptr;
+			renderView_t previewView = {};
+			const idMaterial* smokeMaterial = nullptr;
+			if( nativePreview )
 			{
-				Sys_Error( "Missing renderer_smoke/solid material. Start the renderer smoke test with its fixture directory." );
+				idMapFile map;
+				if( !map.Parse( previewPath, true ) || !FindNativePreviewSpawn( map, previewView ) )
+				{
+					Sys_Error( "Native map preview needs a .map with an info_player_start origin: %s", previewPath );
+				}
+				previewWorld = renderSystem->AllocRenderWorld();
+				if( !previewWorld->InitFromMap( previewPath ) )
+				{
+					Sys_Error( "Could not load the compiled native world: %s", previewPath );
+				}
+				Sys_Printf( "Native map preview loaded %s at %.1f %.1f %.1f\n", previewPath,
+							previewView.vieworg.x, previewView.vieworg.y, previewView.vieworg.z );
+				TraceNativePreviewMap( map, previewView );
+			}
+			else
+			{
+				smokeMaterial = declManager->FindMaterial( "renderer_smoke/solid", false );
+				if( !smokeMaterial )
+				{
+					Sys_Error( "Missing renderer_smoke/solid material. Start the renderer smoke test with its fixture directory." );
+				}
+				renderSystem->SetGLState( GLS_OVERRIDE | GLS_DEPTHFUNC_ALWAYS );
 			}
 			globalImages->LoadDeferredImages();
-			renderSystem->SetGLState( GLS_OVERRIDE | GLS_DEPTHFUNC_ALWAYS );
 			const bool interactive = com_renderSmoke.GetInteger() == 2;
 			if( interactive )
 			{
@@ -1359,12 +1451,33 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 					}
 				}
 
-				const float halfWidth = renderSystem->GetVirtualWidth() * 0.5f;
-				const float virtualHeight = renderSystem->GetVirtualHeight();
-				renderSystem->SetColor( colorRed );
-				renderSystem->DrawStretchPic( 0, 0, halfWidth, virtualHeight, 0, 0, 1, 1, smokeMaterial );
-				renderSystem->SetColor( colorBlue );
-				renderSystem->DrawStretchPic( halfWidth, 0, halfWidth, virtualHeight, 0, 0, 1, 1, smokeMaterial );
+				if( nativePreview )
+				{
+					const int viewWidth = renderSystem->GetWidth();
+					const int viewHeight = renderSystem->GetHeight();
+					if( viewWidth <= 0 || viewHeight <= 0 )
+					{
+						Sys_Sleep( 16 );
+						continue;
+					}
+					if( viewWidth != width || viewHeight != height )
+					{
+						// Reset the current command buffer's viewport before submitting the view.
+						renderSystem->SwapCommandBuffers( nullptr, nullptr, nullptr, nullptr, nullptr, nullptr );
+					}
+					previewView.fov_y = 2.0f * RAD2DEG( idMath::ATan( float( viewHeight ) / viewWidth ) );
+					previewView.time[0] = previewView.time[1] = Sys_Milliseconds();
+					previewWorld->RenderScene( &previewView );
+				}
+				else
+				{
+					const float halfWidth = renderSystem->GetVirtualWidth() * 0.5f;
+					const float virtualHeight = renderSystem->GetVirtualHeight();
+					renderSystem->SetColor( colorRed );
+					renderSystem->DrawStretchPic( 0, 0, halfWidth, virtualHeight, 0, 0, 1, 1, smokeMaterial );
+					renderSystem->SetColor( colorBlue );
+					renderSystem->DrawStretchPic( halfWidth, 0, halfWidth, virtualHeight, 0, 0, 1, 1, smokeMaterial );
+				}
 				const emptyCommand_t* commands = renderSystem->SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
 				renderSystem->RenderCommandBuffers( commands );
 
@@ -1380,9 +1493,14 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 				}
 			}
 			renderSystem->SwapCommandBuffers( NULL, NULL, NULL, NULL, NULL, NULL );
-			if( !R_WriteRendererSmokeImage() )
+			const char* screenshot = nativePreview ? "screenshots/native-map-preview.png" : "screenshots/renderer-smoke.png";
+			if( !R_WriteRendererEvidence( screenshot ) )
 			{
-				Sys_Error( "Could not read the synthetic renderer smoke test frame" );
+				Sys_Error( "Could not capture %s", screenshot );
+			}
+			if( previewWorld )
+			{
+				renderSystem->FreeRenderWorld( previewWorld );
 			}
 			eventLoop->Shutdown();
 			fileSystem->EndLevelLoad();
@@ -1391,7 +1509,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 			soundSystem->Shutdown();
 			CloseLogFile();
 			fileSystem->Shutdown( false );
-			Sys_Printf( "Synthetic renderer smoke test finished\n" );
+			Sys_Printf( "%s\n", nativePreview ? "Native map preview finished" : "Synthetic renderer smoke test finished" );
 			Sys_Quit();
 			return;
 		}

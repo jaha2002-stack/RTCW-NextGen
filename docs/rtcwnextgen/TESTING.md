@@ -26,6 +26,14 @@ python3 -B scripts/test-project.py --rbdmap build-cloud/tools/compilers/rbdmap
 
 Штатный CMake движка не регистрирует CTest. `scripts/test-project.py` покрывает упаковку и запуск `rbdmap` на исходной синтетической карте. Для полной проверки требуется `--rbdmap`.
 
+## Нативный уровень
+
+`scripts/compile-native-level.py` принимает авторский `brushDef3` или Valve 220 `.map` и каталог с собственными `materials/`, `textures/` и `def/`. Утилита компилирует `maps/level` в новом выходном каталоге, проверяет ожидаемые файлы и записывает `level-build.json` и `rbdmap.log`. Параметр `--aas aas48` требует `.aas48` и предполагает определение профиля в `def/`. Без `--aas` компилируются геометрия и коллизии.
+
+`bash scripts/smoke-renderer-linux.sh --native-level` компилирует авторскую комнату, загружает `.proc` в `idRenderWorld`, проверяет материал стены из `info_player_start`, точечные трассы `.cm` в стену, в пол и через свободное пространство, изменение размера окна и штатный выход. С `RTCW_SMOKE_VK_VALIDATION=2` проверяются ошибки Vulkan validation. Исходники карты, материалы и настройки навигации находятся в `tests/fixtures/`.
+
+Для собственного предпросмотра требуется декларация `_default`, материалы карты, `info_player_start` с `origin` и шейдеры собранного backend в `base/renderprogs2`. Готовый каталог уровня указывается в `fs_basepath`. Отдельный каталог для кадра и журнала указывается в `fs_savepath`. Включение `com_nativeMapPreview maps/level` показывает мир и сохраняет `base/screenshots/native-map-preview.png`. С `com_renderSmoke 2` можно изменить размер окна и закрыть его по Escape.
+
 После сборки `bash scripts/smoke-renderer-linux.sh` запускает синтетический режим на Vulkan с Mesa llvmpipe и Xvfb. Скрипт проверяет завершение процесса и красную и синюю области в PNG. Вариант `bash scripts/smoke-renderer-linux.sh --window-events` требует `xdotool`, изменяет размер окна с 640×480 до 704×512, нажимает Escape и проверяет размер захваченного кадра. Для проверки с установленным слоем Vulkan validation задайте `RTCW_SMOKE_VK_VALIDATION=2` и при необходимости укажите путь к JSON слоя через `VK_LAYER_PATH`. Запуск использует временный каталог с двумя синтетическими ресурсами и скомпилированными шейдерами.
 
 ## Игровые ресурсы

@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import re
 import shutil
 import struct
 import subprocess
@@ -42,6 +43,7 @@ class PackageTests(unittest.TestCase):
                 "neo/extern/ShaderMake/LICENSE.txt": b"license",
                 "base/default.cfg": b"configuration",
                 "scripts/renderer-smoke.cmd": b"launcher",
+                "scripts/compile-native-level.py": b"compiler wrapper",
                 "tests/fixtures/renderer-smoke.mtr": b"material",
                 "tests/fixtures/renderer_smoke_white.tga": b"texture",
                 "docs/rtcwnextgen/RELEASE-PROCESS.md": b"instructions",
@@ -67,6 +69,7 @@ class PackageTests(unittest.TestCase):
                 self.assertNotIn("base/game.resources", archive.namelist())
                 self.assertNotIn("Main/pak0.pk3", archive.namelist())
                 self.assertEqual(archive.read("Run Renderer Smoke.cmd"), b"launcher")
+                self.assertEqual(archive.read("tools/compile-native-level.py"), b"compiler wrapper")
                 self.assertEqual(archive.read("base/materials/renderer-smoke.mtr"), b"material")
                 self.assertEqual(archive.read("base/textures/renderer_smoke_white.tga"), b"texture")
             (root / "base/renderprogs2/dxil/synthetic.bin").unlink()
@@ -79,32 +82,67 @@ class PackageTests(unittest.TestCase):
 
 
 class MapCompilerTests(unittest.TestCase):
-    def test_generates_geometry_and_collision(self):
+    def setUp(self):
         if RBDMAP is None:
             self.skipTest("supply --rbdmap to exercise the compiled tool")
-        with tempfile.TemporaryDirectory(prefix="rtcwnextgen-dmap-") as temporary:
-            fixture = Path(temporary)
-            base = fixture / "base"
-            (base / "maps").mkdir(parents=True)
-            (base / "materials").mkdir()
-            shutil.copyfile(ROOT / "base/default.cfg", base / "default.cfg")
-            (base / "materials/cloud_room.mtr").write_text(
-                "textures/test/cloud_room { forceOpaque forceshadows }\n"
-                "_tracemodel { collision }\n",
-                encoding="ascii",
-            )
-            shutil.copyfile(ROOT / "tests/fixtures/cloud_room.map", base / "maps/cloud_room.map")
-            result = subprocess.run(
-                [str(RBDMAP), "-nogui", "+set", "fs_basepath", str(fixture),
-                 "+set", "fs_savepath", str(fixture), "noAAS", "maps/cloud_room.map"],
-                cwd=fixture, capture_output=True, text=True, errors="replace", timeout=60,
-            )
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            proc = base / "maps/cloud_room.proc"
-            collision = base / "maps/cloud_room.cm"
-            self.assertTrue(proc.is_file() and collision.is_file(), result.stdout + result.stderr)
-            self.assertIn(b"_area0", proc.read_bytes())
-            self.assertTrue(collision.read_bytes().startswith(b'CM "1.00"'))
+        temporary = tempfile.TemporaryDirectory(prefix="rtcwnextgen-dmap-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.source = self.root / "author room.map"
+        self.assets = self.root / "author assets"
+        self.output = self.root / "native level"
+        fixtures = ROOT / "tests/fixtures"
+        shutil.copyfile(fixtures / "cloud_room.map", self.source)
+        shutil.copytree(fixtures / "native-level", self.assets)
+        (self.assets / "textures").mkdir()
+        shutil.copyfile(fixtures / "renderer_smoke_white.tga", self.assets / "textures/renderer_smoke_white.tga")
+
+    def run_compiler(self, aas=None):
+        command = [sys.executable, "-B", str(ROOT / "scripts/compile-native-level.py"), str(self.source),
+                   "--rbdmap", str(RBDMAP), "--assets", str(self.assets), "--out", str(self.output)]
+        if aas is not None:
+            command.extend(("--aas", aas))
+        return subprocess.run(
+            command, cwd=self.root, capture_output=True, text=True, errors="replace", timeout=60,
+        )
+
+    def test_compiles_geometry_collision_and_navigation_without_changing_input(self):
+        original = self.source.read_bytes()
+        result = self.run_compiler("aas48")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        maps = self.output / "base/maps"
+        self.assertEqual(self.source.read_bytes(), original)
+        self.assertEqual((maps / "level.map").read_bytes(), original)
+        proc = (maps / "level.proc").read_bytes()
+        self.assertIn(b"_area0", proc)
+        self.assertIn(b"textures/test/cloud_room_panel", proc)
+        self.assertTrue((maps / "level.cm").read_bytes().startswith(b'CM "1.00"'))
+        self.assertTrue((maps / "level.aas48").read_bytes().startswith(b'DewmAAS "1.07"'))
+        manifest = json.loads((self.output / "level-build.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["map"], "maps/level")
+        for name, digest in manifest["sha256"].items():
+            self.assertEqual(hashlib.sha256((self.output / name).read_bytes()).hexdigest(), digest)
+        result = self.run_compiler("aas48")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Output already exists", result.stderr)
+
+    def test_missing_navigation_output_is_a_failure(self):
+        result = self.run_compiler("aas_missing")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("rbdmap did not produce level.aas_missing", result.stderr)
+        self.assertFalse(self.output.exists())
+
+    def test_valve220_compiles_the_authored_room_at_the_expected_scale(self):
+        shutil.copyfile(ROOT / "tests/fixtures/cloud_room_valve220.map", self.source)
+        result = self.run_compiler()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        proc = (self.output / "base/maps/level.proc").read_bytes()
+        vertices = [record.split() for record in re.findall(rb"\(([^()]*)\)", proc)]
+        corners = {tuple(float(value) for value in record[:3]) for record in vertices if len(record) == 8}
+        expected = {(x, y, z) for x in (-128, 128) for y in (-128, 128) for z in (0, 128)}
+        self.assertEqual(corners, expected)
+        self.assertIn(b"textures/test/cloud_room_panel", proc)
+        self.assertFalse((self.output / "base/maps/level.aas48").exists())
 
 
 class BspMetadataTests(unittest.TestCase):
