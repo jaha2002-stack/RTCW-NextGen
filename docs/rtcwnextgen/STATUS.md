@@ -1,6 +1,6 @@
 # RTCW NextGen — состояние проекта
 
-- Дата и задача — 27.11.2026, P01-T02–P01-T04 (синтетический рендерер, события окна и приоритет ресурсов).
+- Дата и задача — 27.11.2026, P02 (проверка формата BSP и ссылок поверхностей).
 - Интеграционная ветка — `rtcwnextgen-prototype` на `4b660789c3f0060ea983182d586ebbdb694af015`. Изменения P01 сохранены в `rtcwnextgen/phase-p01-renderer-smoke`.
 - Ревизии движка и зависимостей зафиксированы в [ADR 0001](adr/0001-upstream-baseline.md).
 - Состояние P00 — AUTO_VERIFIED для исходного baseline. [Windows CI](https://github.com/jaha2002-stack/RTCW-NextGen/actions/runs/45848446252) подтвердил Release x64, DX12/DXIL, три функциональные проверки, распаковку и SHA-256 Windows ZIP на коммите `015972ee7366dc0ea04d58b1c2ee87f251a5e469`. Артефакт GitHub Actions имеет SHA-256 `ba0543cf6e36fd4edbdedbdf414004a2edd02d86f04faa5a62b16c54198557fb`. Внутренний ZIP сопровождается отдельным файлом `.zip.sha256`.
@@ -16,4 +16,5 @@
 - P01-T03 — тест `bash scripts/smoke-renderer-linux.sh --window-events` подтвердил resize 640×480 → 704×512, обе цветные области в PNG, ввод Escape и завершение с кодом 0. Windows CI на `f623cd0fbb47bbc6be4cf6a61a7a13308716cdc7` собрал DX12/DXIL и проверил распаковку ZIP с `Run Renderer Smoke.cmd`. SHA-256 контейнера Actions — `f09c1ccce33196db0826e19a5496f2c95ad202fea1acff30c5c5cece9a925507`. Аппаратный GPU и runtime DX12 — NOT_RUN. [Артефакт Windows](https://github.com/jaha2002-stack/RTCW-NextGen/actions/runs/45868424236#artifacts)
 - P01-T04 — read-only диагностика `--locate` проверяет приоритеты PK3 и резервный поиск отдельного файла. На реальных архивах источник `Maps/Escape1.BSP` определён как `pak0.pk3:maps/escape1.bsp`. Подключение PK3 к движку остаётся следующим инкрементом.
 - P01-T05 — проверка CLI `--state-dir` отклоняет пересечение установки с каталогом сохранений и кэша, включая символьные ссылки. Девять тестов Linux прошли, включая запуск `rbdmap`. Движок на этом этапе использует существующий синтетический режим.
-- Stage II — **BLOCKED**. Результаты P01–P06 и матрица AC-01–AC-11 зафиксированы в [STAGE_II_ACCEPTANCE_REPORT.md](STAGE_II_ACCEPTANCE_REPORT.md).
+- P02 — реализованы диагностика `IBSP` v47 из локального PK3 и проверка ссылок поверхностей на авторских BSP-файлах. Прошли 15 тестов Linux. [Прогресс и следующий инкремент](STAGE_II_PROGRESS.md)
+- Утверждён Variant A. Статусы работ P01–P06 и пересмотренная матрица AC-01–AC-12 зафиксированы в [отчёте приёмки](STAGE_II_ACCEPTANCE_REPORT.md). Ограничение на итоговое прохождение оригинальной карты и незавершённые инженерные работы учтены в [анализе блокеров](STAGE_II_BLOCKER_ANALYSIS.md).

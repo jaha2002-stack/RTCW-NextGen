@@ -1,9 +1,14 @@
 """Inspect the single-player archives in a local RTCW installation."""
 
 import argparse
+import json
+import os
 from pathlib import Path
 import sys
 import zipfile
+import zlib
+
+import ibsp_metadata
 
 REQUIRED = ("pak0.pk3", "sp_pak1.pk3", "sp_pak2.pk3", "sp_pak3.pk3")
 FIRST_MAP = "maps/escape1.bsp"
@@ -126,14 +131,41 @@ def locate_resource(installation, resource):
     return (loose, None) if loose.is_file() else None
 
 
+def inspect_bsp(installation, resource):
+    """Inspect the highest-precedence version of a map without extracting it."""
+    located = locate_resource(installation, resource)
+    if located is None:
+        raise ValueError(f"{resource}: resource not found")
+    path, entry = located
+    if entry is None:
+        with path.open("rb") as stream:
+            metadata = ibsp_metadata.read_header(stream, os.fstat(stream.fileno()).st_size)
+        return {"source": str(path), **metadata}
+
+    source = f"{path.name}:{entry}"
+    try:
+        with zipfile.ZipFile(path, "r") as archive:
+            member = archive.getinfo(entry)
+            if member.flag_bits & 1 or member.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+                raise ValueError("Expected an unencrypted stored or deflated PK3 member")
+            with archive.open(member, "r") as stream:
+                return {"source": source, **ibsp_metadata.read_header(stream, member.file_size)}
+    except (EOFError, KeyError, ValueError, zipfile.BadZipFile, zlib.error) as error:
+        raise ValueError(f"{source}: {error}") from error
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("installation", type=Path, help="installation root or its Main directory")
     checks = parser.add_mutually_exclusive_group()
     checks.add_argument("--locate", metavar="RESOURCE", help="report the source of a resource inside Main")
     checks.add_argument("--state-dir", type=Path, metavar="DIRECTORY", help="check a separate save/cache directory")
+    checks.add_argument("--bsp-info", metavar="RESOURCE", help="validate an IBSP header and report its lump sizes")
     args = parser.parse_args()
     try:
+        if args.bsp_info is not None:
+            print(json.dumps(inspect_bsp(args.installation, args.bsp_info), indent=2))
+            return 0
         if args.locate is not None:
             located = locate_resource(args.installation, args.locate)
             if located is None:

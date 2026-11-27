@@ -3,7 +3,12 @@ name: Windows DX12 CI
 on:
   pull_request:
   push:
-    branches: [master, rtcwnextgen-prototype, rtcwnextgen/phase-p01-renderer-smoke, rtcwnextgen/phase-p01-state-preflight]
+    branches:
+      - master
+      - rtcwnextgen-prototype
+      - rtcwnextgen/phase-p01-renderer-smoke
+      - rtcwnextgen/phase-p01-state-preflight
+      - rtcwnextgen/phase-p02-bsp-metadata
   workflow_dispatch:
 
 permissions:

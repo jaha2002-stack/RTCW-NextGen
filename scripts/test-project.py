@@ -1,16 +1,20 @@
-"""Run P00 synthetic project checks, including a real map compile when requested."""
+"""Run synthetic project checks, including a real map compile when requested."""
 
 import argparse
 import hashlib
 import importlib.util
+import io
+import json
 from pathlib import Path
 import shutil
 import struct
 import subprocess
+import sys
 import tempfile
 import unittest
 import zipfile
 
+import ibsp_metadata
 import rtcw_data
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -101,6 +105,118 @@ class MapCompilerTests(unittest.TestCase):
             self.assertTrue(proc.is_file() and collision.is_file(), result.stdout + result.stderr)
             self.assertIn(b"_area0", proc.read_bytes())
             self.assertTrue(collision.read_bytes().startswith(b'CM "1.00"'))
+
+
+class BspMetadataTests(unittest.TestCase):
+    @staticmethod
+    def make_fixture(*lumps, magic=b"IBSP", version=47, payload=b"synthetic fixture"):
+        ranges = list(lumps) + [(0, 0)] * (17 - len(lumps))
+        return struct.pack("<4si34i", magic, version, *(value for pair in ranges for value in pair)) + payload
+
+    def make_surface_fixture(self, vertices, indices, surfaces):
+        sections = {
+            10: bytes(44 * vertices),
+            11: struct.pack(f"<{len(indices)}i", *indices),
+            13: b"".join(struct.pack("<12x4i76x", *surface) for surface in surfaces),
+        }
+        ranges = [(0, 0)] * 17
+        payload = bytearray()
+        for number, section in sections.items():
+            ranges[number] = (144 + len(payload), len(section))
+            payload.extend(section)
+        return self.make_fixture(*ranges, payload=bytes(payload))
+
+    def test_reads_only_the_header(self):
+        fixture = self.make_fixture((216, 4), (144, 72), payload=bytes(76))
+        stream = io.BytesIO(fixture)
+        info = ibsp_metadata.read_header(stream, len(fixture))
+        self.assertEqual(stream.tell(), 144)
+        self.assertEqual((info["format"], info["version"], info["size"]), ("IBSP", 47, len(fixture)))
+        self.assertEqual(len(info["lumps"]), 17)
+        self.assertEqual(info["lumps"]["entities"], {"offset": 216, "size": 4})
+        self.assertEqual(info["lumps"]["shaders"], {"offset": 144, "size": 72, "records": 1})
+        self.assertEqual(info["lumps"]["visibility"], {"offset": 0, "size": 0})
+
+    def test_reports_truncated_headers_and_unsupported_formats(self):
+        for data, message in (
+            (b"IBSP", "Truncated IBSP header"),
+            (self.make_fixture(magic=b"XBSP"), "Expected an IBSP signature"),
+            (self.make_fixture(version=46), "Unsupported IBSP version 46"),
+        ):
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                ibsp_metadata.read_header(io.BytesIO(data), len(data))
+
+    def test_rejects_invalid_lump_ranges(self):
+        for ranges, message in (
+            (((144, -2),), "entities falls outside the file"),
+            (((-1, 2),), "entities falls outside the file"),
+            (((144, 400),), "entities falls outside the file"),
+            (((400, 0),), "entities falls outside the file"),
+            (((142, 2),), "entities overlaps the header"),
+            (((144, 2), (144, 72)), "shaders overlaps another lump"),
+            (((144, 2), (148, 2)), "shaders is not a whole number of 72-byte records"),
+        ):
+            with self.subTest(ranges=ranges), self.assertRaisesRegex(ValueError, message):
+                data = self.make_fixture(*ranges, payload=bytes(72))
+                ibsp_metadata.read_header(io.BytesIO(data), len(data))
+
+    def test_cli_resolves_archives_then_loose_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            main = Path(temporary) / "Main"
+            maps = main / "Maps"
+            maps.mkdir(parents=True)
+            loose = maps / "fixture.bsp"
+            loose.write_bytes(self.make_fixture((144, 3)))
+            with zipfile.ZipFile(main / "z_other.pk3", "w") as archive:
+                archive.writestr("maps/fixture.bsp", self.make_fixture((144, 4)))
+            priority_pack = main / "sp_pak3.pk3"
+            with zipfile.ZipFile(priority_pack, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr("MAPS/FIXTURE.BSP", self.make_fixture((144, 5)))
+                archive.writestr("maps/invalid.bsp", b"IBSP")
+
+            command = [sys.executable, "-B", str(ROOT / "scripts/rtcw_data.py"), str(main), "--bsp-info"]
+            result = subprocess.run([*command, "maps/fixture.bsp"], capture_output=True, text=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(result.stdout)
+            self.assertEqual(report["source"], "sp_pak3.pk3:MAPS/FIXTURE.BSP")
+            self.assertEqual(report["lumps"]["entities"]["size"], 5)
+
+            result = subprocess.run([*command, "maps/invalid.bsp"], capture_output=True, text=True, timeout=15)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("sp_pak3.pk3:maps/invalid.bsp: Truncated IBSP header", result.stderr)
+            self.assertFalse(result.stdout)
+
+            priority_pack.unlink()
+            (main / "z_other.pk3").unlink()
+            result = subprocess.run([*command, "maps/fixture.bsp"], capture_output=True, text=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(result.stdout)
+            self.assertEqual(Path(report["source"]), loose.resolve())
+            self.assertEqual(report["lumps"]["entities"]["size"], 3)
+
+    def test_local_surface_reference_check(self):
+        fixture = self.make_surface_fixture(6, [0, 1, 2, 2, 1, 0], [(0, 3, 0, 3), (3, 3, 3, 3)])
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "two surfaces.bsp"
+            path.write_bytes(fixture)
+            command = [sys.executable, "-B", str(ROOT / "scripts/ibsp_metadata.py"), str(path)]
+            result = subprocess.run(command, capture_output=True, text=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["checked_surfaces"], 2)
+            self.assertEqual(path.read_bytes(), fixture)
+
+    def test_local_surface_reference_check_reports_invalid_references(self):
+        for surface, indices, message in (
+            ((2, 3, 0, 3), [0, 1, 2], "vertex range falls outside"),
+            ((0, 3, 2, 3), [0, 1, 2], "index range falls outside"),
+            ((0, 3, 0, 3), [0, 1, 3], "index outside its vertex range"),
+            ((0, 3, 0, 3), [0, -1, 1], "index outside its vertex range"),
+        ):
+            with self.subTest(surface=surface, indices=indices), self.assertRaisesRegex(ValueError, message):
+                fixture = self.make_surface_fixture(3, indices, [surface])
+                stream = io.BytesIO(fixture)
+                metadata = ibsp_metadata.read_header(stream, len(fixture))
+                ibsp_metadata.check_surface_references(stream, metadata["lumps"])
 
 
 class RTCWDataTests(unittest.TestCase):
