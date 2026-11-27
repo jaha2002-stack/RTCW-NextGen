@@ -11,7 +11,7 @@ run_dir=$(mktemp -d)
 printf 'Renderer smoke output: %s\n' "$run_dir"
 mkdir -p "$run_dir/fixture/base/materials" "$run_dir/fixture/base/textures" "$run_dir/save" "$run_dir/runtime" "$run_dir/cache" "$run_dir/data"
 chmod 700 "$run_dir/runtime"
-printf '// Minimal configuration for the synthetic renderer fixture.\n' > "$run_dir/fixture/base/default.cfg"
+cp "$root/base/default.cfg" "$run_dir/fixture/base/default.cfg"
 cp "$root/tests/fixtures/renderer-smoke.mtr" "$run_dir/fixture/base/materials/"
 cp "$root/tests/fixtures/renderer_smoke_white.tga" "$run_dir/fixture/base/textures/"
 ln -s "$root/base/renderprogs2" "$run_dir/fixture/base/renderprogs2"
@@ -33,9 +33,11 @@ elif [[ "${1:-}" == --native-level && "$#" == 1 ]]; then
     fixture="$run_dir/native-level"
     cp -R "$root/tests/fixtures/native-level" "$run_dir/assets"
     mkdir -p "$run_dir/assets/textures"
+    cp "$root/tests/fixtures/renderer-smoke.mtr" "$run_dir/assets/materials/"
     cp "$root/tests/fixtures/renderer_smoke_white.tga" "$run_dir/assets/textures/"
     python3 -B "$root/scripts/compile-native-level.py" "$root/tests/fixtures/cloud_room.map" \
         --rbdmap "$root/build-cloud/tools/compilers/rbdmap" --assets "$run_dir/assets" --out "$fixture" --aas aas48
+    cp "$root/base/default.cfg" "$fixture/base/default.cfg"
     ln -s "$root/base/renderprogs2" "$fixture/base/renderprogs2"
     preview_args=(+set com_nativeMapPreview maps/level)
 elif (( $# != 0 )); then
@@ -58,9 +60,10 @@ if [[ "$validation" == 2 ]]; then
 fi
 if (( ${#preview_args[@]} )); then
     grep -F 'Native map preview loaded maps/level at -40.0 0.0 48.0' "$run_dir/engine.log"
-    grep -Fx 'Native collision forward fraction=0.6553 endpoint=127.75 0.00 48.00' "$run_dir/engine.log"
-    grep -Fx 'Native collision down fraction=0.3730 endpoint=-40.00 0.00 0.25' "$run_dir/engine.log"
-    grep -Fx 'Native collision nearby fraction=1.0000 endpoint=-8.00 0.00 48.00' "$run_dir/engine.log"
+    log="$run_dir/save/base/qconsole.log"
+    grep -Fx 'Native collision forward fraction=0.6553 endpoint=127.75 0.00 48.00' "$log"
+    grep -Fx 'Native collision down fraction=0.3730 endpoint=-40.00 0.00 0.25' "$log"
+    grep -Fx 'Native collision nearby fraction=1.0000 endpoint=-8.00 0.00 48.00' "$log"
     grep -F 'Native map preview finished' "$run_dir/engine.log"
     grep -Fx 'Renderer smoke received Escape' "$run_dir/engine.log"
     image="$run_dir/save/base/screenshots/native-map-preview.png"

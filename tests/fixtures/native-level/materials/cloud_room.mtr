@@ -1,10 +1,3 @@
-_default
-{
-	{
-		map _default
-	}
-}
-
 textures/test/cloud_room
 {
 	forceOpaque

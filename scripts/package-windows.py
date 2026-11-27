@@ -1,4 +1,4 @@
-"""Build the renderer smoke engineering ZIP from a Windows Release build."""
+"""Package Windows checks for renderer startup and the authored native level."""
 
 import argparse
 import hashlib
@@ -48,12 +48,22 @@ def collect(root, build):
         "neo/extern/ShaderMake/LICENSE.txt": "licenses/ShaderMake.txt",
         "base/default.cfg": "base/default.cfg",
         "scripts/renderer-smoke.cmd": "Run Renderer Smoke.cmd",
+        "scripts/native-level-check.cmd": "Run Native Level Check.cmd",
         "scripts/compile-native-level.py": "tools/compile-native-level.py",
         "tests/fixtures/renderer-smoke.mtr": "base/materials/renderer-smoke.mtr",
         "tests/fixtures/renderer_smoke_white.tga": "base/textures/renderer_smoke_white.tga",
+        "tests/fixtures/native-level/materials/cloud_room.mtr": "base/materials/cloud_room.mtr",
+        "tests/fixtures/native-level/def/navigation.def": "base/def/navigation.def",
         "docs/rtcwnextgen/RELEASE-PROCESS.md": "README.md",
+        "docs/rtcwnextgen/P01-P02-TEST-CARD.md": "TEST-CARD.md",
     }.items():
         files[destination] = read_input(root / source)
+
+    level = build / "native-level"
+    for extension in ("map", "proc", "cm", "aas48"):
+        name = f"base/maps/level.{extension}"
+        files[name] = read_input(level / name)
+    files["P02-LEVEL-MANIFEST.json"] = read_input(level / "level-build.json")
 
     shaders = root / "base/renderprogs2/dxil"
     shader_files = sorted(shaders.rglob("*.bin"))
@@ -105,7 +115,7 @@ def main():
     if not submodules or any(line[0] != " " for line in submodules):
         raise ValueError("Initialize all submodules at their pinned commits")
     manifest = {
-        "scope": "P01 renderer smoke test",
+        "scope": "P01 renderer startup and P02 authored native level checks",
         "source_sha": sha,
         "upstream_sha": UPSTREAM,
         "submodules": {line.split()[1]: line.split()[0] for line in submodules},
@@ -114,7 +124,7 @@ def main():
         "backend": "DX12 / DXIL",
         "platform": "Windows x64",
     }
-    output = args.out / f"RTCW-NextGen-P01-{sha[:12]}-win-x64.zip"
+    output = args.out / f"RTCW-NextGen-P01-P02-{sha[:12]}-win-x64.zip"
     write_package(output, collect(ROOT, ROOT / "build-windows"), manifest)
     print(output)
 

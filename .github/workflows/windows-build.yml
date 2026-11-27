@@ -19,10 +19,12 @@ jobs:
         run: ./scripts/build-windows.ps1
       - name: Test synthetic geometry and package rules
         run: python -B scripts/test-project.py --rbdmap build-windows/tools/compilers/Release/rbdmap.exe
-      - name: Package renderer smoke test and verify clean extraction
+      - name: Build the authored P02 level for PC testing
+        run: python -B scripts/compile-native-level.py tests/fixtures/cloud_room.map --rbdmap build-windows/tools/compilers/Release/rbdmap.exe --assets tests/fixtures/native-level --out build-windows/native-level --aas aas48
+      - name: Package P01 and P02 checks and verify clean extraction
         run: python scripts/package-windows.py --out build-windows/artifacts
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: p01-renderer-smoke-windows-dx12-${{ github.sha }}
+          name: p01-p02-windows-dx12-${{ github.sha }}
           path: build-windows/artifacts/
           if-no-files-found: error

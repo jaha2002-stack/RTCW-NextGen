@@ -43,10 +43,19 @@ class PackageTests(unittest.TestCase):
                 "neo/extern/ShaderMake/LICENSE.txt": b"license",
                 "base/default.cfg": b"configuration",
                 "scripts/renderer-smoke.cmd": b"launcher",
+                "scripts/native-level-check.cmd": b"native check launcher",
                 "scripts/compile-native-level.py": b"compiler wrapper",
                 "tests/fixtures/renderer-smoke.mtr": b"material",
                 "tests/fixtures/renderer_smoke_white.tga": b"texture",
+                "tests/fixtures/native-level/materials/cloud_room.mtr": b"native room material",
+                "tests/fixtures/native-level/def/navigation.def": b"navigation definition",
+                "build/native-level/base/maps/level.map": b"authored map",
+                "build/native-level/base/maps/level.proc": b"compiled geometry",
+                "build/native-level/base/maps/level.cm": b"compiled collisions",
+                "build/native-level/base/maps/level.aas48": b"compiled navigation",
+                "build/native-level/level-build.json": b"level manifest",
                 "docs/rtcwnextgen/RELEASE-PROCESS.md": b"instructions",
+                "docs/rtcwnextgen/P01-P02-TEST-CARD.md": b"PC test card",
                 "base/renderprogs2/dxil/synthetic.bin": b"shader",
                 "base/pak000.pk4": b"must be excluded",
                 "Main/pak0.pk3": b"must be excluded",
@@ -69,9 +78,17 @@ class PackageTests(unittest.TestCase):
                 self.assertNotIn("base/game.resources", archive.namelist())
                 self.assertNotIn("Main/pak0.pk3", archive.namelist())
                 self.assertEqual(archive.read("Run Renderer Smoke.cmd"), b"launcher")
+                self.assertEqual(archive.read("Run Native Level Check.cmd"), b"native check launcher")
                 self.assertEqual(archive.read("tools/compile-native-level.py"), b"compiler wrapper")
                 self.assertEqual(archive.read("base/materials/renderer-smoke.mtr"), b"material")
                 self.assertEqual(archive.read("base/textures/renderer_smoke_white.tga"), b"texture")
+                for extension in ("map", "proc", "cm", "aas48"):
+                    name = f"base/maps/level.{extension}"
+                    self.assertEqual(archive.read(name), inputs[f"build/native-level/{name}"])
+                self.assertEqual(archive.read("base/materials/cloud_room.mtr"), b"native room material")
+                self.assertEqual(archive.read("base/def/navigation.def"), b"navigation definition")
+                self.assertEqual(archive.read("P02-LEVEL-MANIFEST.json"), b"level manifest")
+                self.assertEqual(archive.read("TEST-CARD.md"), b"PC test card")
             (root / "base/renderprogs2/dxil/synthetic.bin").unlink()
             with self.assertRaisesRegex(ValueError, "DXIL"):
                 PACKAGE.collect(root, build)

@@ -5,6 +5,7 @@
 ```powershell
 pwsh -File scripts/build-windows.ps1
 python -B scripts/test-project.py --rbdmap build-windows/tools/compilers/Release/rbdmap.exe
+python -B scripts/compile-native-level.py tests/fixtures/cloud_room.map --rbdmap build-windows/tools/compilers/Release/rbdmap.exe --assets tests/fixtures/native-level --out build-windows/native-level --aas aas48
 python scripts/package-windows.py --out build-windows/artifacts
 ```
 

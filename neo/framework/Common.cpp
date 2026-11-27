@@ -133,7 +133,7 @@ static void TraceNativePreviewMap( const idMapFile& map, const renderView_t& vie
 		trace_t trace = {};
 		collisionModelManager->Translation( &trace, view.vieworg, view.vieworg + request.delta,
 				nullptr, mat3_identity, CONTENTS_SOLID, worldModel, vec3_origin, mat3_identity );
-		Sys_Printf( "Native collision %s fraction=%.4f endpoint=%.2f %.2f %.2f\n",
+		common->Printf( "Native collision %s fraction=%.4f endpoint=%.2f %.2f %.2f\n",
 					request.name, trace.fraction, trace.endpos.x, trace.endpos.y, trace.endpos.z );
 	}
 	collisionModelManager->FreeMap();
