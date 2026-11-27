@@ -104,6 +104,46 @@ class MapCompilerTests(unittest.TestCase):
 
 
 class RTCWDataTests(unittest.TestCase):
+    def test_state_directory_is_separate_and_not_created(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            installation = root / "Installed Game"
+            main = installation / "mAiN"
+            main.mkdir(parents=True)
+            state = root / "Player Data" / "state"
+
+            self.assertEqual(rtcw_data.check_state_directory(main, state), state.resolve())
+            self.assertFalse(state.parent.exists())
+            for overlap in (root, installation, installation / "cache", main, main / "saves"):
+                with self.subTest(overlap=overlap), self.assertRaisesRegex(ValueError, "overlaps"):
+                    rtcw_data.check_state_directory(installation, overlap)
+
+            ordinary_file = root / "file"
+            ordinary_file.write_text("fixture", encoding="ascii")
+            for path in (ordinary_file, ordinary_file / "state"):
+                with self.subTest(path=path), self.assertRaisesRegex(ValueError, "passes through a file"):
+                    rtcw_data.check_state_directory(installation, path)
+
+    def test_state_directory_resolves_directory_links(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            installation = root / "installation"
+            installation.mkdir()
+            content = root / "relocated Main"
+            content.mkdir()
+            alias = root / "alias"
+            try:
+                (installation / "Main").symlink_to(content, target_is_directory=True)
+                alias.symlink_to(installation, target_is_directory=True)
+            except OSError as error:
+                if getattr(error, "winerror", None) == 1314:
+                    self.skipTest("Windows runner lacks permission to create directory symlinks")
+                raise
+
+            for overlap in (alias / "cache", content / "saves"):
+                with self.subTest(overlap=overlap), self.assertRaisesRegex(ValueError, "overlaps"):
+                    rtcw_data.check_state_directory(installation, overlap)
+
     def test_locate_respects_single_player_precedence(self):
         with tempfile.TemporaryDirectory() as temporary:
             main = Path(temporary) / "Main"

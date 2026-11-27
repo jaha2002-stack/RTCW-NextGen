@@ -21,6 +21,28 @@ def find_main(installation):
     return matches[0]
 
 
+def check_state_directory(installation, state_directory):
+    """Check a proposed save/cache root without creating or writing to it."""
+    main = find_main(installation)
+    installation_root = main.parent.resolve(strict=True)
+    content_root = main.resolve(strict=True)
+    try:
+        state = state_directory.resolve()
+    except RuntimeError as error:
+        raise ValueError(f"Cannot resolve the state directory: {state_directory}") from error
+
+    for source in (installation_root, content_root):
+        if state.is_relative_to(source) or source.is_relative_to(state):
+            raise ValueError(f"State directory overlaps the installation: {state} and {source}")
+
+    for parent in (state, *state.parents):
+        if parent.exists():
+            if not parent.is_dir():
+                raise ValueError(f"State directory passes through a file: {parent}")
+            break
+    return state
+
+
 def inspect(installation):
     main = find_main(installation)
     entries = list(main.iterdir())
@@ -107,7 +129,9 @@ def locate_resource(installation, resource):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("installation", type=Path, help="installation root or its Main directory")
-    parser.add_argument("--locate", metavar="RESOURCE", help="report the source of a resource inside Main")
+    checks = parser.add_mutually_exclusive_group()
+    checks.add_argument("--locate", metavar="RESOURCE", help="report the source of a resource inside Main")
+    checks.add_argument("--state-dir", type=Path, metavar="DIRECTORY", help="check a separate save/cache directory")
     args = parser.parse_args()
     try:
         if args.locate is not None:
@@ -118,7 +142,12 @@ def main():
             path, entry = located
             print(f"{path.name}:{entry}" if entry is not None else str(path))
             return 0
+        state = None
+        if args.state_dir is not None:
+            state = check_state_directory(args.installation, args.state_dir)
         messages, ready = inspect(args.installation)
+        if state is not None:
+            messages.append(f"Separate save/cache directory: {state}")
     except (OSError, ValueError) as error:
         print(error, file=sys.stderr)
         return 1
