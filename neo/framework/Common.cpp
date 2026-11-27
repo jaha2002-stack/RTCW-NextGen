@@ -35,6 +35,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "ConsoleHistory.h"
 
+#include "../d3xp/anim/Anim.h"
 #include "../renderer/GLState.h"
 #include "../sound/sound.h"
 
@@ -100,6 +101,27 @@ static bool FindNativePreviewSpawn( const idMapFile& map, renderView_t& view )
 		}
 	}
 	return false;
+}
+
+static void AddNativePreviewModels( const idMapFile& map, idRenderWorld& world )
+{
+	// Normally the game registers this before parsing model spawn args.
+	declManager->RegisterDeclType( "model", DECL_MODELDEF, idDeclAllocator<idDeclModelDef> );
+	for( int i = 1; i < map.GetNumEntities(); ++i )
+	{
+		const idDict& properties = map.GetEntity( i )->epairs;
+		if( idStr::Icmp( properties.GetString( "classname" ), "func_static" ) != 0 )
+		{
+			continue;
+		}
+		renderEntity_t entity;
+		gameEdit->ParseSpawnArgsToRenderEntity( &properties, &entity );
+		if( entity.hModel && !entity.hModel->IsDefaultModel() )
+		{
+			world.AddEntityDef( &entity );
+			common->Printf( "Native preview static model %s at %s\n", properties.GetString( "model" ), entity.origin.ToString( 2 ) );
+		}
+	}
 }
 
 static void TraceNativePreviewMap( const idMapFile& map, const renderView_t& view )
@@ -1422,6 +1444,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 				{
 					Sys_Error( "Could not load the compiled native world: %s", previewPath );
 				}
+				AddNativePreviewModels( map, *previewWorld );
 				Sys_Printf( "Native map preview loaded %s at %.1f %.1f %.1f\n", previewPath,
 							previewView.vieworg.x, previewView.vieworg.y, previewView.vieworg.z );
 				TraceNativePreviewMap( map, previewView );

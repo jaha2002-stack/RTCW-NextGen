@@ -1,4 +1,4 @@
-"""Package the Relay Station Windows x64 acceptance candidate."""
+"""Package the Windows x64 Stage II engineering checks and tools."""
 
 import argparse
 import hashlib
@@ -51,6 +51,8 @@ def collect(root, build):
         "scripts/native-level-check.cmd": "Run Native Level Check.cmd",
         "scripts/play-relay-station.cmd": "Play Relay Station.cmd",
         "scripts/compile-native-level.py": "tools/compile-native-level.py",
+        "scripts/import-ibsp.py": "tools/import-ibsp.py",
+        "scripts/ibsp_metadata.py": "tools/ibsp_metadata.py",
         "tests/fixtures/renderer-smoke.mtr": "base/materials/renderer-smoke.mtr",
         "tests/fixtures/native-level/textures/renderer_smoke_white.tga": "base/textures/renderer_smoke_white.tga",
         "tests/fixtures/native-level/materials/cloud_room.mtr": "base/materials/cloud_room.mtr",
@@ -58,6 +60,7 @@ def collect(root, build):
         "docs/rtcwnextgen/RELEASE-PROCESS.md": "README.md",
         "docs/rtcwnextgen/P01-P02-TEST-CARD.md": "TEST-CARD.md",
         "docs/rtcwnextgen/RELAY-STATION-TEST-CARD.md": "START-HERE.md",
+        "docs/rtcwnextgen/IBSP-IMPORT.md": "IBSP-IMPORT.md",
     }.items():
         files[destination] = read_input(root / source)
 
@@ -125,7 +128,7 @@ def main():
     if not submodules or any(line[0] != " " for line in submodules):
         raise ValueError("Initialize all submodules at their pinned commits")
     manifest = {
-        "scope": "Relay Station playable acceptance candidate with P01/P02 diagnostics",
+        "scope": "Stage II engineering checks and IBSP import tools",
         "source_sha": sha,
         "upstream_sha": UPSTREAM,
         "submodules": {line.split()[1]: line.split()[0] for line in submodules},
@@ -134,7 +137,7 @@ def main():
         "backend": "DX12 / DXIL",
         "platform": "Windows x64",
     }
-    output = args.out / f"RTCW-NextGen-Relay-Station-RC-{sha[:12]}-win-x64.zip"
+    output = args.out / f"RTCW-NextGen-Stage-II-Tools-{sha[:12]}-win-x64.zip"
     write_package(output, collect(ROOT, ROOT / "build-windows"), manifest)
     print(output)
 

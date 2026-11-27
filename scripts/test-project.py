@@ -22,7 +22,96 @@ ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("package_windows", Path(__file__).with_name("package-windows.py"))
 PACKAGE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PACKAGE)
+FIXTURE_SPEC = importlib.util.spec_from_file_location("ibsp_import_fixture", ROOT / "tests/ibsp_import_fixture.py")
+IMPORT_FIXTURE = importlib.util.module_from_spec(FIXTURE_SPEC)
+FIXTURE_SPEC.loader.exec_module(IMPORT_FIXTURE)
 RBDMAP = None
+
+
+class ImportTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="rtcwnextgen-ibsp-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.resources = self.root / "resources"
+        shutil.copytree(ROOT / "tests/fixtures/native-level", self.resources)
+        self.converted = self.root / "converted"
+
+    def run_import(self, source, mapping, destination):
+        return subprocess.run([
+            sys.executable, "-B", str(ROOT / "scripts/import-ibsp.py"), str(source),
+            "--materials", str(mapping), "--resources", str(self.resources),
+            "--out", str(destination), "--navigation-def", str(self.resources / "def/navigation.def"),
+        ], capture_output=True, text=True, errors="replace", timeout=60)
+
+    def test_supported_bsp_versions_and_asset_remap_keep_native_geometry(self):
+        for version in (46, 47):
+            with self.subTest(version=version):
+                source, mapping = IMPORT_FIXTURE.write_fixture(self.root, self.resources, version)
+                original = source.read_bytes()
+                first = self.root / f"import-{version}"
+                result = self.run_import(source, mapping, first)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                report = json.loads((first / "import.json").read_text(encoding="utf-8"))
+                self.assertEqual(report["version"], version)
+                self.assertEqual(report["sha256"], hashlib.sha256(original).hexdigest())
+                self.assertEqual(report["unconverted"], {})
+                self.assertEqual(report["models"], ["models/import_marker.obj"])
+                source_map = (first / "imported.map").read_text(encoding="utf-8")
+                self.assertIn('"source_classname" "func_door"', source_map)
+                self.assertIn('"origin" "80 61 24"', source_map)
+                self.assertIn('"angles" "0 45 0"', source_map)
+                self.assertIn('"modelscale" "1.25"', source_map)
+                self.assertIn("patchDef2", source_map)
+                options = json.loads(mapping.read_text(encoding="utf-8"))
+                options["fixture/pane"].update(texture="textures/relay/wall.tga", alpha=0.67)
+                mapping.write_text(json.dumps(options), encoding="utf-8")
+                remapped = self.root / f"remap-{version}"
+                result = self.run_import(source, mapping, remapped)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((remapped / "imported.map").read_text(encoding="utf-8"), source_map)
+                self.assertIn("alpha 0.67", (remapped / "assets/materials/ibsp_import.mtr").read_text(encoding="ascii"))
+                self.assertEqual(source.read_bytes(), original)
+
+    def test_rejects_missing_mapping_and_paths_outside_resources(self):
+        source, mapping = IMPORT_FIXTURE.write_fixture(self.root, self.resources)
+        options = json.loads(mapping.read_text(encoding="utf-8"))
+        options["fixture/deck"]["texture"] = "textures/../deck.tga"
+        mapping.write_text(json.dumps(options), encoding="utf-8")
+        result = self.run_import(source, mapping, self.converted)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Unsafe resource path", result.stderr)
+        del options["fixture/deck"]
+        mapping.write_text(json.dumps(options), encoding="utf-8")
+        result = self.run_import(source, mapping, self.converted)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Missing material mapping", result.stderr)
+        self.assertFalse(self.converted.exists())
+
+    def test_compiles_import_with_preserved_dimensions_uv_patch_and_collision(self):
+        if RBDMAP is None:
+            self.skipTest("supply --rbdmap to exercise the compiled tool")
+        source, mapping = IMPORT_FIXTURE.write_fixture(self.root, self.resources)
+        result = self.run_import(source, mapping, self.converted)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        compiled = self.root / "native"
+        result = subprocess.run([
+            sys.executable, "-B", str(ROOT / "scripts/compile-native-level.py"), str(self.converted / "imported.map"),
+            "--assets", str(self.converted / "assets"), "--rbdmap", str(RBDMAP),
+            "--out", str(compiled), "--aas", "aas48",
+        ], capture_output=True, text=True, errors="replace", timeout=180)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        maps = compiled / "base/maps"
+        proc = (maps / "level.proc").read_bytes()
+        for vertex in (b"120 -100 0 2.5 0.125", b"-120 100 0 0.25 1.875",
+                       b"120 100 112", b"51.5 -44 66 0.5 1", b"-6 -8 27"):
+            self.assertIn(vertex, proc)
+        self.assertIn(b'"ibsp_model_1"', proc)
+        cm = (maps / "level.cm").read_bytes()
+        self.assertIn(b'collisionModel "ibsp_model_1"', cm)
+        self.assertRegex(cm, rb"\( -136 -116 -16 \) \( 136 116 -?0 \)")
+        self.assertTrue((maps / "level.aas48").read_bytes().startswith(b'DewmAAS "1.07"'))
+        self.assertTrue((compiled / "base/models/import_marker.obj").is_file())
 
 
 class PackageTests(unittest.TestCase):
@@ -46,6 +135,8 @@ class PackageTests(unittest.TestCase):
                 "scripts/native-level-check.cmd": b"native check launcher",
                 "scripts/play-relay-station.cmd": b"Relay Station launcher",
                 "scripts/compile-native-level.py": b"compiler wrapper",
+                "scripts/import-ibsp.py": b"import wrapper",
+                "scripts/ibsp_metadata.py": b"IBSP layout",
                 "tests/fixtures/renderer-smoke.mtr": b"material",
                 "tests/fixtures/native-level/textures/renderer_smoke_white.tga": b"texture",
                 "tests/fixtures/native-level/materials/cloud_room.mtr": b"native room material",
@@ -66,6 +157,7 @@ class PackageTests(unittest.TestCase):
                 "docs/rtcwnextgen/RELEASE-PROCESS.md": b"instructions",
                 "docs/rtcwnextgen/P01-P02-TEST-CARD.md": b"PC test card",
                 "docs/rtcwnextgen/RELAY-STATION-TEST-CARD.md": b"relay test card",
+                "docs/rtcwnextgen/IBSP-IMPORT.md": b"import guide",
                 "base/renderprogs2/dxil/synthetic.bin": b"shader",
                 "base/pak000.pk4": b"must be excluded",
                 "Main/pak0.pk3": b"must be excluded",
@@ -92,6 +184,8 @@ class PackageTests(unittest.TestCase):
                 self.assertEqual(archive.read("Play Relay Station.cmd"), b"Relay Station launcher")
                 self.assertEqual(archive.read("START-HERE.md"), b"relay test card")
                 self.assertEqual(archive.read("tools/compile-native-level.py"), b"compiler wrapper")
+                self.assertEqual(archive.read("tools/import-ibsp.py"), b"import wrapper")
+                self.assertEqual(archive.read("tools/ibsp_metadata.py"), b"IBSP layout")
                 self.assertEqual(archive.read("base/materials/renderer-smoke.mtr"), b"material")
                 self.assertEqual(archive.read("base/textures/renderer_smoke_white.tga"), b"texture")
                 for extension in ("map", "proc", "cm", "aas48"):

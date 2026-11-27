@@ -798,9 +798,11 @@ bspFace_t*	MakeStructuralBspFaceList( primitive_t* list )
 	{
 		idBounds bounds;
 		bounds.Clear();
+		bool hasBrushes = false;
 
 		for( ; list; list = list->next )
 		{
+			hasBrushes |= list->brush != nullptr;
 			tri = list->polyTris;
 			if( tri )
 			{
@@ -815,9 +817,10 @@ bspFace_t*	MakeStructuralBspFaceList( primitive_t* list )
 			}
 		}
 
-		if( !bounds.IsCleared() )
+		// Existing brushes already define the solid and open sides of a mixed submodel.
+		if( !hasBrushes && !bounds.IsCleared() )
 		{
-			b = BrushFromBounds( bounds );
+			b = BrushFromBounds( bounds.Expand( 1 ) );
 			//b->substractive = true;
 			b->simpleBSP = true;
 			b->opaque = true;
@@ -855,6 +858,11 @@ bspFace_t*	MakeStructuralBspFaceList( primitive_t* list )
 			{
 				for( ; tri; tri = tri->next )
 				{
+					// A detail mesh can share the surface of a structural brush.
+					if( tri->material->GetContentFlags() & CONTENTS_NOCSG )
+					{
+						continue;
+					}
 					MapPolygonMesh* mapMesh = ( MapPolygonMesh* ) tri->originalMapMesh;
 
 					// don't create BSP faces for the nodraw helpers touching the area portals

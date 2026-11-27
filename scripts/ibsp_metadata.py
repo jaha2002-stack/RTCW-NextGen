@@ -34,15 +34,16 @@ MAX_SURFACES = 0x20000
 MAX_DRAW_INDICES = 0x80000
 
 
-def read_header(stream, size):
+def read_header(stream, size, versions=(47,)):
     header = stream.read(HEADER.size)
     if len(header) != HEADER.size or size < HEADER.size:
         raise ValueError(f"Truncated IBSP header (expected {HEADER.size} bytes)")
     magic, version, *table = HEADER.unpack(header)
     if magic != b"IBSP":
         raise ValueError("Expected an IBSP signature")
-    if version != 47:
-        raise ValueError(f"Unsupported IBSP version {version} (expected 47)")
+    if version not in versions:
+        supported = ", ".join(map(str, versions))
+        raise ValueError(f"Unsupported IBSP version {version} (expected {supported})")
 
     lumps = {}
     ranges = []

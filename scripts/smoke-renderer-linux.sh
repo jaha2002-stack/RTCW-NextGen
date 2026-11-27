@@ -24,6 +24,7 @@ mode=1
 fixture="$run_dir/fixture"
 preview_args=()
 relay=false
+imported=false
 launcher=(sh -c 'xdpyinfo >/dev/null && exec "$@"' sh)
 if [[ "${1:-}" == --window-events && "$#" == 1 ]]; then
     mode=2
@@ -39,6 +40,20 @@ elif [[ "${1:-}" == --native-level && "$#" == 1 ]]; then
     cp "$root/base/default.cfg" "$fixture/base/default.cfg"
     ln -s "$root/base/renderprogs2" "$fixture/base/renderprogs2"
     preview_args=(+set com_nativeMapPreview maps/level)
+elif [[ "${1:-}" == --imported-level && "$#" == 1 ]]; then
+    imported=true
+    fixture="$run_dir/imported-level"
+    cp -R "$root/tests/fixtures/native-level" "$run_dir/resources"
+    python3 -B "$root/tests/ibsp_import_fixture.py" "$run_dir/author" "$run_dir/resources"
+    python3 -B "$root/scripts/import-ibsp.py" "$run_dir/author/author.bsp" \
+        --materials "$run_dir/author/materials.json" --resources "$run_dir/resources" \
+        --navigation-def "$run_dir/resources/def/navigation.def" --out "$run_dir/import"
+    python3 -B "$root/scripts/compile-native-level.py" "$run_dir/import/imported.map" \
+        --rbdmap "$root/build-cloud/tools/compilers/rbdmap" --assets "$run_dir/import/assets" \
+        --out "$fixture" --aas aas48 --map-name imported
+    cp "$root/base/default.cfg" "$fixture/base/default.cfg"
+    ln -s "$root/base/renderprogs2" "$fixture/base/renderprogs2"
+    preview_args=(+set com_nativeMapPreview maps/imported)
 elif [[ "${1:-}" == --relay && "$#" == 1 ]]; then
     relay=true
     launcher=(bash "$root/tests/relay-station-window-events.sh" "$run_dir")
@@ -51,7 +66,7 @@ elif [[ "${1:-}" == --relay && "$#" == 1 ]]; then
     ln -s "$root/base/renderprogs2" "$fixture/base/renderprogs2"
     preview_args=(+set com_nativeRelay 1)
 elif (( $# != 0 )); then
-    echo "Usage: $0 [--window-events | --native-level | --relay]" >&2
+    echo "Usage: $0 [--window-events | --native-level | --imported-level | --relay]" >&2
     exit 2
 fi
 timeout --kill-after=5s 50s xvfb-run -a -e "$run_dir/xvfb.log" -s '-screen 0 800x600x24 -noreset' \
@@ -81,6 +96,23 @@ if "$relay"; then
     fi
     test -s "$run_dir/relay-complete.png"
     printf 'Verified Relay Station entry and completion captures in %s\n' "$run_dir"
+    exit 0
+fi
+if "$imported"; then
+    grep -Fx 'Native map preview loaded maps/imported at -40.0 0.0 36.0' "$run_dir/engine.log"
+    log="$run_dir/save/base/qconsole.log"
+    grep -Fx 'Native preview static model ibsp_model_1 at 80 61 24' "$log"
+    grep -Fx 'Native preview static model models/import_marker.obj at 77 -24 20' "$log"
+    grep -Fx 'Native collision forward fraction=0.6240 endpoint=119.75 0.00 36.00' "$log"
+    grep -Fx 'Native collision down fraction=0.2793 endpoint=-40.00 0.00 0.25' "$log"
+    image="$run_dir/save/base/screenshots/native-map-preview.png"
+    [[ $(magick identify -format '%wx%h' "$image") == 640x480 ]]
+    pixels=$(magick "$image" -format '%[fx:p{320,25}.r>0.2 && p{500,205}.r>p{415,205}.r+0.025 && p{500,205}.r>p{500,175}.r+0.025]' info:)
+    if [[ "$pixels" != 1 ]]; then
+        echo "Expected a rendered ceiling and visible texture detail through the imported pane in $image" >&2
+        exit 1
+    fi
+    printf 'Verified imported native level in %s\n' "$image"
     exit 0
 fi
 if (( ${#preview_args[@]} )); then

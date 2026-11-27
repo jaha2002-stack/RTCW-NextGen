@@ -17,16 +17,16 @@ jobs:
           persist-credentials: false
       - name: Build engine, DXIL shaders and map compiler
         run: ./scripts/build-windows.ps1
-      - name: Test synthetic geometry and package rules
+      - name: Test authored IBSP import, geometry and package rules
         run: python -B scripts/test-project.py --rbdmap build-windows/tools/compilers/Release/rbdmap.exe
       - name: Build the authored P02 level for PC testing
         run: python -B scripts/compile-native-level.py tests/fixtures/cloud_room.map --rbdmap build-windows/tools/compilers/Release/rbdmap.exe --assets tests/fixtures/native-level --out build-windows/native-level --aas aas48
       - name: Compile Relay Station geometry, collision and navigation
         run: python -B scripts/compile-native-level.py tests/fixtures/relay_station.map --rbdmap build-windows/tools/compilers/Release/rbdmap.exe --assets tests/fixtures/native-level --out build-windows/relay-station --aas aas48 --map-name relay
-      - name: Package Relay Station and verify clean extraction
+      - name: Package Stage II tools and verify clean extraction
         run: python scripts/package-windows.py --out build-windows/artifacts
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: relay-station-windows-dx12-${{ github.sha }}
+          name: stage-ii-tools-windows-dx12-${{ github.sha }}
           path: build-windows/artifacts/
           if-no-files-found: error

@@ -1,6 +1,6 @@
 # RTCW NextGen — состояние проекта
 
-- Дата и задача — 27.11.2026, P03–P06 (игровой кандидат на авторской карте Relay Station).
+- Дата и задача — 27.11.2026, Stage II (импорт IBSP и сопоставление ресурсов).
 - Интеграционная ветка — `rtcwnextgen-prototype` на `4b660789c3f0060ea983182d586ebbdb694af015`. Изменения P01 сохранены в `rtcwnextgen/phase-p01-renderer-smoke`.
 - Ревизии движка и зависимостей зафиксированы в [ADR 0001](adr/0001-upstream-baseline.md).
 - Состояние P00 — AUTO_VERIFIED для исходного baseline. [Windows CI](https://github.com/jaha2002-stack/RTCW-NextGen/actions/runs/45848446252) подтвердил Release x64, DX12/DXIL, три функциональные проверки, распаковку и SHA-256 Windows ZIP на коммите `015972ee7366dc0ea04d58b1c2ee87f251a5e469`. Артефакт GitHub Actions имеет SHA-256 `ba0543cf6e36fd4edbdedbdf414004a2edd02d86f04faa5a62b16c54198557fb`. Внутренний ZIP сопровождается отдельным файлом `.zip.sha256`.
@@ -20,4 +20,5 @@
 - Нативный конвейер на `rtcwnextgen/stage-ii-native-level-remaster` использует `rbdmap` и `idRenderWorld`. Геометрия, коллизии и навигация скомпилированы на авторской карте. Vulkan подтвердил геометрию и материалы после изменения размера окна. Прошли 17 тестов Linux. [Результаты и следующая задача](STAGE_II_PROGRESS.md)
 - Приёмка Native Playable Level Prototype ведётся по обновлённым критериям. Точное воссоздание оригинальной планировки `escape1` ограничено. [Матрица приёмки](STAGE_II_ACCEPTANCE_REPORT.md) · [Аудит компонентов](NATIVE_LEVEL_REUSE_AUDIT.md)
 - Проверочная сборка P01/P02 для ПК содержит два лаунчера, авторский `.map` и заранее собранные `.proc`, `.cm`, `.aas48`. Владелец подтвердил оба теста на Windows. [Запись приёмки](ACCEPTANCE.md) [Карточка проверки](P01-P02-TEST-CARD.md)
-- Relay Station использует нативные физику игрока, коллизии и AAS RBDoom3BFG. Windows x64/DX12 — целевая платформа приёмки. [Результаты, повтор проверок и следующий шаг](STAGE_II_PROGRESS.md) · [Карточка Relay Station](RELAY-STATION-TEST-CARD.md)
+- Relay Station использует нативные физику игрока, коллизии и AAS RBDoom3BFG. Windows x64/DX12 — целевая платформа интегрированного RC. [Результаты, повтор проверок и следующий шаг](STAGE_II_PROGRESS.md) · [Карточка Relay Station](RELAY-STATION-TEST-CARD.md)
+- Действует консолидированная директива. Авторский IBSP проходит преобразование, компиляцию и нативную загрузку. Relay Station служит инженерной проверкой игрового режима. Приёмка P06 требует сквозного сценария на преобразованной карте. [Директива](STAGE_II_SCOPE_DIRECTIVE.md) · [Отчёт](STAGE_II_ACCEPTANCE_REPORT.md)

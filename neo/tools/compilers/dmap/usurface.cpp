@@ -1025,6 +1025,10 @@ void FilterMeshesIntoTree( uEntity_t* e )
 			// add BSP triangles
 			for( tri = prim->polyTris ; tri ; tri = tri->next )
 			{
+				if( tri->material->GetContentFlags() & CONTENTS_NOCSG )
+				{
+					continue;
+				}
 				idWinding* w = WindingForTri( tri );
 
 				c_unique++;

@@ -36,7 +36,7 @@ def compile_level(compiler, source, assets, output, navigation, map_name="level"
         base = staged / "base"
         maps = base / "maps"
         maps.mkdir(parents=True)
-        for directory in ("materials", "textures", "def"):
+        for directory in ("materials", "textures", "models", "def"):
             if (assets / directory).is_dir():
                 shutil.copytree(assets / directory, base / directory)
 
