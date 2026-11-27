@@ -13,7 +13,7 @@ mkdir -p "$run_dir/fixture/base/materials" "$run_dir/fixture/base/textures" "$ru
 chmod 700 "$run_dir/runtime"
 cp "$root/base/default.cfg" "$run_dir/fixture/base/default.cfg"
 cp "$root/tests/fixtures/renderer-smoke.mtr" "$run_dir/fixture/base/materials/"
-cp "$root/tests/fixtures/renderer_smoke_white.tga" "$run_dir/fixture/base/textures/"
+cp "$root/tests/fixtures/native-level/textures/renderer_smoke_white.tga" "$run_dir/fixture/base/textures/"
 ln -s "$root/base/renderprogs2" "$run_dir/fixture/base/renderprogs2"
 
 export SDL_VIDEODRIVER=x11
@@ -23,6 +23,7 @@ validation=${RTCW_SMOKE_VK_VALIDATION:-1}
 mode=1
 fixture="$run_dir/fixture"
 preview_args=()
+relay=false
 launcher=(sh -c 'xdpyinfo >/dev/null && exec "$@"' sh)
 if [[ "${1:-}" == --window-events && "$#" == 1 ]]; then
     mode=2
@@ -32,19 +33,28 @@ elif [[ "${1:-}" == --native-level && "$#" == 1 ]]; then
     launcher=(bash "$root/tests/renderer-smoke-window-events.sh" "$run_dir/engine.log")
     fixture="$run_dir/native-level"
     cp -R "$root/tests/fixtures/native-level" "$run_dir/assets"
-    mkdir -p "$run_dir/assets/textures"
     cp "$root/tests/fixtures/renderer-smoke.mtr" "$run_dir/assets/materials/"
-    cp "$root/tests/fixtures/renderer_smoke_white.tga" "$run_dir/assets/textures/"
     python3 -B "$root/scripts/compile-native-level.py" "$root/tests/fixtures/cloud_room.map" \
         --rbdmap "$root/build-cloud/tools/compilers/rbdmap" --assets "$run_dir/assets" --out "$fixture" --aas aas48
     cp "$root/base/default.cfg" "$fixture/base/default.cfg"
     ln -s "$root/base/renderprogs2" "$fixture/base/renderprogs2"
     preview_args=(+set com_nativeMapPreview maps/level)
+elif [[ "${1:-}" == --relay && "$#" == 1 ]]; then
+    relay=true
+    launcher=(bash "$root/tests/relay-station-window-events.sh" "$run_dir")
+    fixture="$run_dir/relay"
+    python3 -B "$root/scripts/compile-native-level.py" "$root/tests/fixtures/relay_station.map" \
+        --rbdmap "$root/build-cloud/tools/compilers/rbdmap" --assets "$root/tests/fixtures/native-level" \
+        --out "$fixture" --aas aas48 --map-name relay
+    cp "$root/base/default.cfg" "$fixture/base/default.cfg"
+    cp "$root/tests/fixtures/renderer-smoke.mtr" "$fixture/base/materials/"
+    ln -s "$root/base/renderprogs2" "$fixture/base/renderprogs2"
+    preview_args=(+set com_nativeRelay 1)
 elif (( $# != 0 )); then
-    echo "Usage: $0 [--window-events | --native-level]" >&2
+    echo "Usage: $0 [--window-events | --native-level | --relay]" >&2
     exit 2
 fi
-timeout --kill-after=5s 30s xvfb-run -a -e "$run_dir/xvfb.log" -s '-screen 0 800x600x24 -noreset' \
+timeout --kill-after=5s 50s xvfb-run -a -e "$run_dir/xvfb.log" -s '-screen 0 800x600x24 -noreset' \
     "${launcher[@]}" "$root/build-cloud/RBDoom3BFG" \
     +set fs_basepath "$fixture" +set fs_savepath "$run_dir/save" \
     +set r_fullscreen 0 +set r_windowWidth 640 +set r_windowHeight 480 \
@@ -57,6 +67,21 @@ if [[ "$validation" == 2 ]]; then
     if grep -E 'Validation Error|VUID-' "$run_dir/engine.log"; then
         exit 1
     fi
+fi
+if "$relay"; then
+    log="$run_dir/save/base/qconsole.log"
+    grep -E 'Relay: AAS route [1-9][0-9]* -> [1-9][0-9]*' "$log"
+    grep -Fx 'Relay: level complete' "$log"
+    image="$run_dir/relay-entry.png"
+    [[ $(magick identify -format '%wx%h' "$image") == 640x480 ]]
+    pixels=$(magick "$image" -format '%[fx:p{550,125}.b>p{550,125}.r+0.16 && p{550,150}.r>p{550,125}.r+0.04 && p{270,337}.r>p{285,345}.r+0.035]' info:)
+    if [[ "$pixels" != 1 ]]; then
+        echo "Expected textured deck and a tinted pane with visible background detail in $image" >&2
+        exit 1
+    fi
+    test -s "$run_dir/relay-complete.png"
+    printf 'Verified Relay Station entry and completion captures in %s\n' "$run_dir"
+    exit 0
 fi
 if (( ${#preview_args[@]} )); then
     grep -F 'Native map preview loaded maps/level at -40.0 0.0 48.0' "$run_dir/engine.log"

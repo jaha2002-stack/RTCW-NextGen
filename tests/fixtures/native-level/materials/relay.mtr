@@ -1,0 +1,79 @@
+textures/relay/deck
+{
+	forceOpaque
+	noShadows
+	{ map textures/relay/deck }
+}
+textures/relay/wall
+{
+	forceOpaque
+	noShadows
+	{ map textures/relay/wall }
+}
+textures/relay/stripe
+{
+	forceOpaque
+	noShadows
+	{ map textures/relay/deck }
+	{
+		blend add
+		map textures/renderer_smoke_white
+		color 0.36, 0.16, 0.02, 0
+	}
+}
+textures/relay/glass
+{
+	translucent
+	nonsolid
+	noShadows
+	twoSided
+	{
+		blend blend
+		map textures/renderer_smoke_white
+		color 0.03, 0.67, 0.80, 0.38
+	}
+}
+textures/relay/ladder
+{
+	forceOpaque
+	noShadows
+	ladder
+	{ map textures/relay/deck }
+	{
+		blend add
+		map textures/renderer_smoke_white
+		color 0.34, 0.29, 0.04, 0
+	}
+}
+textures/relay/cell
+{
+	forceOpaque
+	noShadows
+	{
+		map textures/renderer_smoke_white
+		color 0.09, 0.87, 0.63, 1
+	}
+}
+textures/relay/exit
+{
+	forceOpaque
+	noShadows
+	{
+		map textures/renderer_smoke_white
+		color 0.84, 0.64, 0.15, 1
+	}
+}
+_tracemodel
+{
+	collision
+}
+textures/relay/portal
+{
+	areaportal
+	noShadows
+}
+textures/relay/portal_back
+{
+	nonsolid
+	noShadows
+}

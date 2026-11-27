@@ -1,4 +1,4 @@
-"""Package Windows checks for renderer startup and the authored native level."""
+"""Package the Relay Station Windows x64 acceptance candidate."""
 
 import argparse
 import hashlib
@@ -49,13 +49,15 @@ def collect(root, build):
         "base/default.cfg": "base/default.cfg",
         "scripts/renderer-smoke.cmd": "Run Renderer Smoke.cmd",
         "scripts/native-level-check.cmd": "Run Native Level Check.cmd",
+        "scripts/play-relay-station.cmd": "Play Relay Station.cmd",
         "scripts/compile-native-level.py": "tools/compile-native-level.py",
         "tests/fixtures/renderer-smoke.mtr": "base/materials/renderer-smoke.mtr",
-        "tests/fixtures/renderer_smoke_white.tga": "base/textures/renderer_smoke_white.tga",
+        "tests/fixtures/native-level/textures/renderer_smoke_white.tga": "base/textures/renderer_smoke_white.tga",
         "tests/fixtures/native-level/materials/cloud_room.mtr": "base/materials/cloud_room.mtr",
         "tests/fixtures/native-level/def/navigation.def": "base/def/navigation.def",
         "docs/rtcwnextgen/RELEASE-PROCESS.md": "README.md",
         "docs/rtcwnextgen/P01-P02-TEST-CARD.md": "TEST-CARD.md",
+        "docs/rtcwnextgen/RELAY-STATION-TEST-CARD.md": "START-HERE.md",
     }.items():
         files[destination] = read_input(root / source)
 
@@ -64,6 +66,14 @@ def collect(root, build):
         name = f"base/maps/level.{extension}"
         files[name] = read_input(level / name)
     files["P02-LEVEL-MANIFEST.json"] = read_input(level / "level-build.json")
+
+    relay = build / "relay-station"
+    for name in (
+        "base/maps/relay.map", "base/maps/relay.proc", "base/maps/relay.cm", "base/maps/relay.aas48",
+        "base/materials/relay.mtr", "base/textures/relay/deck.tga", "base/textures/relay/wall.tga",
+    ):
+        files[name] = read_input(relay / name)
+    files["RELAY-LEVEL-MANIFEST.json"] = read_input(relay / "level-build.json")
 
     shaders = root / "base/renderprogs2/dxil"
     shader_files = sorted(shaders.rglob("*.bin"))
@@ -115,7 +125,7 @@ def main():
     if not submodules or any(line[0] != " " for line in submodules):
         raise ValueError("Initialize all submodules at their pinned commits")
     manifest = {
-        "scope": "P01 renderer startup and P02 authored native level checks",
+        "scope": "Relay Station playable acceptance candidate with P01/P02 diagnostics",
         "source_sha": sha,
         "upstream_sha": UPSTREAM,
         "submodules": {line.split()[1]: line.split()[0] for line in submodules},
@@ -124,7 +134,7 @@ def main():
         "backend": "DX12 / DXIL",
         "platform": "Windows x64",
     }
-    output = args.out / f"RTCW-NextGen-P01-P02-{sha[:12]}-win-x64.zip"
+    output = args.out / f"RTCW-NextGen-Relay-Station-RC-{sha[:12]}-win-x64.zip"
     write_package(output, collect(ROOT, ROOT / "build-windows"), manifest)
     print(output)
 

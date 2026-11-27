@@ -22,3 +22,9 @@ entityDef aas48 {
 	"tt_waterJump" "100"
 	"tt_startWalkOffLedge" "100"
 }
+
+entityDef relay_drone {
+    "use_aas" "aas48"
+    "mins" "-10 -10 0"
+    "maxs" "10 10 19"
+}

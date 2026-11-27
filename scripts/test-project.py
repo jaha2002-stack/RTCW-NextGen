@@ -44,9 +44,10 @@ class PackageTests(unittest.TestCase):
                 "base/default.cfg": b"configuration",
                 "scripts/renderer-smoke.cmd": b"launcher",
                 "scripts/native-level-check.cmd": b"native check launcher",
+                "scripts/play-relay-station.cmd": b"Relay Station launcher",
                 "scripts/compile-native-level.py": b"compiler wrapper",
                 "tests/fixtures/renderer-smoke.mtr": b"material",
-                "tests/fixtures/renderer_smoke_white.tga": b"texture",
+                "tests/fixtures/native-level/textures/renderer_smoke_white.tga": b"texture",
                 "tests/fixtures/native-level/materials/cloud_room.mtr": b"native room material",
                 "tests/fixtures/native-level/def/navigation.def": b"navigation definition",
                 "build/native-level/base/maps/level.map": b"authored map",
@@ -54,8 +55,17 @@ class PackageTests(unittest.TestCase):
                 "build/native-level/base/maps/level.cm": b"compiled collisions",
                 "build/native-level/base/maps/level.aas48": b"compiled navigation",
                 "build/native-level/level-build.json": b"level manifest",
+                "build/relay-station/base/maps/relay.map": b"relay map",
+                "build/relay-station/base/maps/relay.proc": b"relay geometry",
+                "build/relay-station/base/maps/relay.cm": b"relay collision",
+                "build/relay-station/base/maps/relay.aas48": b"relay navigation",
+                "build/relay-station/base/materials/relay.mtr": b"relay material",
+                "build/relay-station/base/textures/relay/deck.tga": b"deck texture",
+                "build/relay-station/base/textures/relay/wall.tga": b"wall texture",
+                "build/relay-station/level-build.json": b"relay manifest",
                 "docs/rtcwnextgen/RELEASE-PROCESS.md": b"instructions",
                 "docs/rtcwnextgen/P01-P02-TEST-CARD.md": b"PC test card",
+                "docs/rtcwnextgen/RELAY-STATION-TEST-CARD.md": b"relay test card",
                 "base/renderprogs2/dxil/synthetic.bin": b"shader",
                 "base/pak000.pk4": b"must be excluded",
                 "Main/pak0.pk3": b"must be excluded",
@@ -79,15 +89,20 @@ class PackageTests(unittest.TestCase):
                 self.assertNotIn("Main/pak0.pk3", archive.namelist())
                 self.assertEqual(archive.read("Run Renderer Smoke.cmd"), b"launcher")
                 self.assertEqual(archive.read("Run Native Level Check.cmd"), b"native check launcher")
+                self.assertEqual(archive.read("Play Relay Station.cmd"), b"Relay Station launcher")
+                self.assertEqual(archive.read("START-HERE.md"), b"relay test card")
                 self.assertEqual(archive.read("tools/compile-native-level.py"), b"compiler wrapper")
                 self.assertEqual(archive.read("base/materials/renderer-smoke.mtr"), b"material")
                 self.assertEqual(archive.read("base/textures/renderer_smoke_white.tga"), b"texture")
                 for extension in ("map", "proc", "cm", "aas48"):
                     name = f"base/maps/level.{extension}"
                     self.assertEqual(archive.read(name), inputs[f"build/native-level/{name}"])
+                    name = f"base/maps/relay.{extension}"
+                    self.assertEqual(archive.read(name), inputs[f"build/relay-station/{name}"])
                 self.assertEqual(archive.read("base/materials/cloud_room.mtr"), b"native room material")
                 self.assertEqual(archive.read("base/def/navigation.def"), b"navigation definition")
                 self.assertEqual(archive.read("P02-LEVEL-MANIFEST.json"), b"level manifest")
+                self.assertEqual(archive.read("RELAY-LEVEL-MANIFEST.json"), b"relay manifest")
                 self.assertEqual(archive.read("TEST-CARD.md"), b"PC test card")
             (root / "base/renderprogs2/dxil/synthetic.bin").unlink()
             with self.assertRaisesRegex(ValueError, "DXIL"):
@@ -111,14 +126,14 @@ class MapCompilerTests(unittest.TestCase):
         fixtures = ROOT / "tests/fixtures"
         shutil.copyfile(fixtures / "cloud_room.map", self.source)
         shutil.copytree(fixtures / "native-level", self.assets)
-        (self.assets / "textures").mkdir()
-        shutil.copyfile(fixtures / "renderer_smoke_white.tga", self.assets / "textures/renderer_smoke_white.tga")
 
-    def run_compiler(self, aas=None):
+    def run_compiler(self, aas=None, map_name=None):
         command = [sys.executable, "-B", str(ROOT / "scripts/compile-native-level.py"), str(self.source),
                    "--rbdmap", str(RBDMAP), "--assets", str(self.assets), "--out", str(self.output)]
         if aas is not None:
             command.extend(("--aas", aas))
+        if map_name is not None:
+            command.extend(("--map-name", map_name))
         return subprocess.run(
             command, cwd=self.root, capture_output=True, text=True, errors="replace", timeout=60,
         )
@@ -148,6 +163,22 @@ class MapCompilerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("rbdmap did not produce level.aas_missing", result.stderr)
         self.assertFalse(self.output.exists())
+
+    def test_relay_compiles_with_a_portal_and_navigation(self):
+        shutil.copyfile(ROOT / "tests/fixtures/relay_station.map", self.source)
+        result = self.run_compiler("aas48", map_name="relay")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        maps = self.output / "base/maps"
+        self.assertEqual({path.name for path in maps.iterdir()}, {
+            "relay.map", "relay.proc", "relay.cm", "relay.aas48",
+        })
+        proc = (maps / "relay.proc").read_bytes()
+        self.assertIn(b"_area0", proc)
+        self.assertIn(b"_area1", proc)
+        self.assertIn(b"numIAP = */ 1", proc)
+        self.assertIn(b"textures/relay/glass", proc)
+        self.assertIn(b"collisionModel \"relay_gate\"", (maps / "relay.cm").read_bytes())
+        self.assertEqual(json.loads((self.output / "level-build.json").read_text())["map"], "maps/relay")
 
     def test_valve220_compiles_the_authored_room_at_the_expected_scale(self):
         shutil.copyfile(ROOT / "tests/fixtures/cloud_room_valve220.map", self.source)

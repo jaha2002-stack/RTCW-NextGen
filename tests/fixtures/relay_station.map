@@ -1,0 +1,272 @@
+Version 2
+// Relay Station. Original level geometry for the native prototype.
+{
+"classname" "worldspawn"
+{
+brushDef3
+{
+( 1 0 0 -944 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/deck" 0 0 0
+( -1 0 0 -16 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/deck" 0 0 0
+( 0 1 0 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/deck" 0 0 0
+( 0 -1 0 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/deck" 0 0 0
+( 0 0 1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/deck" 0 0 0
+( 0 0 -1 -16 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/deck" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -944 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 -16 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 1 0 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 -1 192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 -16 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 1 0 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -944 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 928 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 1 0 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -928 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 1 0 192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -928 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 1 0 -208 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -154 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( -1 0 0 130 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 1 0 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 -1 0 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 0 1 -12 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -281 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 205 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 1 0 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 -1 50 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -452 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 436 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 1 0 56 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -452 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 436 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 1 0 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 56 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -452 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 436 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 1 0 -56 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 -56 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 -1 96 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -688 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( -1 0 0 570 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 1 0 -125 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 -1 0 64 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 0 1 -110 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -652 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 586 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 1 0 116 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 -176 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -100 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -538 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+( -1 0 0 534 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+( 0 1 0 116 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+( 0 -1 0 -176 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+( 0 0 1 -100 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+( 0 0 -1 25 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -928 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( -1 0 0 828 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/ladder" 0 0 0
+( 0 1 0 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 -1 0 -192 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+( 0 0 1 -72 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/ladder" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/wall" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -445 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/portal" 0 0 0
+( -1 0 0 443 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/portal_back" 0 0 0
+( 0 1 0 -56 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/portal_back" 0 0 0
+( 0 -1 0 -56 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/portal_back" 0 0 0
+( 0 0 1 -96 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/portal_back" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/portal_back" 0 0 0
+}
+}
+{
+brushDef3
+{
+( 1 0 0 -134 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+( -1 0 0 132 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+( 0 1 0 36 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+( 0 -1 0 -106 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+( 0 0 1 -88 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+( 0 0 -1 26 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/glass" 0 0 0
+}
+}
+}
+{
+"classname" "info_player_start"
+"origin" "76 0 4"
+}
+{
+"classname" "relay_drone_goal"
+"origin" "748 16 2"
+}
+{
+"classname" "relay_exit"
+"origin" "893 0 74"
+}
+{
+"classname" "func_static"
+"name" "relay_gate"
+"model" "relay_gate"
+"origin" "444 0 48"
+{
+brushDef3
+{
+( 1 0 0 -452 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( -1 0 0 436 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 1 0 -56 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 -1 0 -56 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 0 1 -96 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+( 0 0 -1 0 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/stripe" 0 0 0
+}
+}
+}
+{
+"classname" "func_static"
+"name" "relay_cell"
+"model" "relay_cell"
+"origin" "340 0 20"
+{
+brushDef3
+{
+( 1 0 0 -349 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+( -1 0 0 331 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+( 0 1 0 -9 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+( 0 -1 0 -9 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+( 0 0 1 -29 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+( 0 0 -1 11 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+}
+}
+}
+{
+"classname" "relay_drone"
+"name" "relay_drone"
+"model" "relay_drone"
+"origin" "528 108 2"
+{
+brushDef3
+{
+( 1 0 0 -538 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+( -1 0 0 518 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+( 0 1 0 -118 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+( 0 -1 0 98 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+( 0 0 1 -21 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+( 0 0 -1 2 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/cell" 0 0 0
+}
+}
+}
+{
+"classname" "func_static"
+"name" "relay_beacon"
+"model" "relay_beacon"
+"origin" "900 0 74"
+{
+brushDef3
+{
+( 1 0 0 -908 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/exit" 0 0 0
+( -1 0 0 892 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/exit" 0 0 0
+( 0 1 0 -26 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/exit" 0 0 0
+( 0 -1 0 -26 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/exit" 0 0 0
+( 0 0 1 -100 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/exit" 0 0 0
+( 0 0 -1 74 ) ( ( 0.015625 0 0 ) ( 0 0.015625 0 ) ) "textures/relay/exit" 0 0 0
+}
+}
+}

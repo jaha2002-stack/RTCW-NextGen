@@ -6,4 +6,14 @@
 - Из точки `(-40, 0, 48)` нативные коллизии остановили трассу у стены на `x=127,75` и у пола на `z=0,25` с учётом допуска движка в 0,25. Короткая трасса дошла до `(-8, 0, 48)` с долей `1,0`.
 - Linux Release собран. Прошли 17 тестов `test-project.py`, проверка кода CI и проверка исходного двухцветного режима. Диагностическая Windows-упаковка включает `tools/compile-native-level.py`. [Windows CI ветви](https://github.com/jaha2002-stack/RTCW-NextGen/actions?query=branch%3Artcwnextgen%2Fstage-ii-native-level-remaster)
 
-**Следующая независимая задача** — проверить связь двух авторских областей, видимость через дверной проём и AAS-маршрут. [План](STAGE_II_IMPLEMENTATION_PLAN.md) · [Матрица приёмки](STAGE_II_ACCEPTANCE_REPORT.md)
+## Relay Station
+
+- Пользователь подтвердил P01 и P02 на Windows x64/DX12. [Артефакт](https://github.com/jaha2002-stack/RTCW-NextGen/actions/runs/45948311165#artifacts) · [Реестр приёмок](ACCEPTANCE.md)
+- Авторская геометрия Relay Station компилируется в два render area и один портал на двери. Порядок запуска настроен для исходной MAP, нативных `.proc`, `.cm`, `.aas48`, исходных TGA и DXIL или SPIR-V.
+- В сценарии используются `idRenderWorld`, `idPhysics_Player`, `idClip` и `idAAS`. При старте отдельно инициализируется система типов, чтобы компоненты физики могли безопасно создавать и уничтожать сущности.
+- Состояние прохождения сбрасывается по `R`. Для ПК предусмотрен лаунчер `Play Relay Station.cmd`. [Карточка](RELAY-STATION-TEST-CARD.md)
+- Для повторения в настроенной среде Linux выполните `RTCW_SMOKE_VK_VALIDATION=2 bash scripts/smoke-renderer-linux.sh --relay`. Тест отправляет реальные события клавиатуры через Xvfb, сохраняет кадры у входа и при завершении, проверяет текстуру, смешивание стекла, маршрут AAS, прохождение, перезапуск и штатный выход. Тесты `--native-level` и `--window-events` проверяют регрессии.
+
+- Linux Release прошёл 18 тестов. Прогон Relay Station под Mesa llvmpipe с `VK_LAYER_KHRONOS_validation` завершился с кодом 0. Нативный маршрут AAS — 4 → 1. Последний кадр снят на площадке в точке (866,2; 0; 72,3), после появления `RELAY ONLINE`. Регрессии P01 и P02 завершились с кодом 0.
+
+Оставшийся этап игровой приёмки — запустить проверенный Windows x64/DX12 RC на ПК владельца. [План](STAGE_II_IMPLEMENTATION_PLAN.md) · [Матрица приёмки](STAGE_II_ACCEPTANCE_REPORT.md)

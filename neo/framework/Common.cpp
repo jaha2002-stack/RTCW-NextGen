@@ -41,6 +41,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <sys/DeviceManager.h>
 extern DeviceManager* deviceManager;
 bool R_WriteRendererEvidence( const char* filename );
+void RunNativeRelay();
 
 // RB begin
 #if defined(USE_DOOMCLASSIC)
@@ -74,6 +75,7 @@ idCVar com_version( "si_version", version.string, CVAR_SYSTEM | CVAR_ROM | CVAR_
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD" );
 static idCVar com_renderSmoke( "com_renderSmoke", "0", CVAR_INTEGER | CVAR_SYSTEM | CVAR_INIT, "draw a synthetic renderer test pattern before game initialization: 1 = capture and exit, 2 = wait for Escape or window close", 0, 2 );
 static idCVar com_nativeMapPreview( "com_nativeMapPreview", "", CVAR_SYSTEM | CVAR_INIT, "preview an authored native map before game initialization" );
+static idCVar com_nativeRelay( "com_nativeRelay", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_INIT, "play the authored Relay Station level" );
 static bool renderSmokeQuitRequested;
 
 static void RenderSmokeQuit_f( const idCmdArgs& )
@@ -1354,13 +1356,14 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		StartupVariable( NULL );
 		const char* previewPath = com_nativeMapPreview.GetString();
 		const bool nativePreview = previewPath[0] != '\0';
-		if( nativePreview )
+		const bool nativeRelay = com_nativeRelay.GetBool();
+		if( nativePreview || nativeRelay )
 		{
 			if( !declManager->FindMaterial( "_default", false ) )
 			{
-				Sys_Error( "Native map preview requires a _default material in the level's materials directory" );
+				Sys_Error( "Native level startup requires a _default material in the level's materials directory" );
 			}
-			// The preview has no game session or temporal history.
+			// Isolated native levels have no full game session or temporal history.
 			cvarSystem->SetCVarInteger( "r_antiAliasing", 0 );
 		}
 
@@ -1381,6 +1384,26 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 		renderSystem->Init();
 
 		whiteMaterial = declManager->FindMaterial( "_white" );
+
+		const auto shutdownIsolatedMode = [this]( const char* message )
+		{
+			eventLoop->Shutdown();
+			fileSystem->EndLevelLoad();
+			declManager->Shutdown();
+			renderSystem->Shutdown();
+			soundSystem->Shutdown();
+			CloseLogFile();
+			fileSystem->Shutdown( false );
+			Sys_Printf( "%s\n", message );
+			Sys_Quit();
+		};
+
+		if( nativeRelay )
+		{
+			RunNativeRelay();
+			shutdownIsolatedMode( "Relay Station finished" );
+			return;
+		}
 
 		if( nativePreview || com_renderSmoke.GetBool() )
 		{
@@ -1502,15 +1525,7 @@ void idCommonLocal::Init( int argc, const char* const* argv, const char* cmdline
 			{
 				renderSystem->FreeRenderWorld( previewWorld );
 			}
-			eventLoop->Shutdown();
-			fileSystem->EndLevelLoad();
-			declManager->Shutdown();
-			renderSystem->Shutdown();
-			soundSystem->Shutdown();
-			CloseLogFile();
-			fileSystem->Shutdown( false );
-			Sys_Printf( "%s\n", nativePreview ? "Native map preview finished" : "Synthetic renderer smoke test finished" );
-			Sys_Quit();
+			shutdownIsolatedMode( nativePreview ? "Native map preview finished" : "Synthetic renderer smoke test finished" );
 			return;
 		}
 
