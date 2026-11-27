@@ -28,7 +28,7 @@ python3 -B scripts/test-project.py --rbdmap build-cloud/tools/compilers/rbdmap
 
 После сборки `bash scripts/smoke-renderer-linux.sh` запускает синтетический режим на Vulkan с Mesa llvmpipe и Xvfb. Скрипт проверяет завершение процесса и красную и синюю области в PNG. Вариант `bash scripts/smoke-renderer-linux.sh --window-events` требует `xdotool`, изменяет размер окна с 640×480 до 704×512, нажимает Escape и проверяет размер захваченного кадра. Для проверки с установленным слоем Vulkan validation задайте `RTCW_SMOKE_VK_VALIDATION=2` и при необходимости укажите путь к JSON слоя через `VK_LAYER_PATH`. Запуск использует временный каталог с двумя синтетическими ресурсами и скомпилированными шейдерами.
 
-`bash scripts/smoke-renderer-linux.sh --signal-room` запускает самостоятельную игру Signal Room на том же рендерере. `xdotool` управляет игроком через события X11, проверяет столкновение с препятствием, дважды проходит сбор трёх модулей и выход с перезапуском между проходами, затем закрывает окно по `Esc`. Скрипт проверяет PNG 640×480 и измеряет яркость сцены вне игрового интерфейса. Windows ZIP содержит `Play Signal Room.cmd` и [сценарий проверки DirectX 12](SIGNAL-ROOM-TEST-CARD.md).
+`bash scripts/smoke-renderer-linux.sh --signal-room` запускает самостоятельную игру Signal Room на том же рендерере. `xdotool` меняет размер окна до 704×512, проверяет столкновение с препятствием, дважды проходит сбор трёх модулей и выход с перезапуском между проходами, затем закрывает окно по `Esc`. Скрипт проверяет PNG 704×512 и измеряет яркость сцены вне игрового интерфейса. Windows ZIP содержит `Play Signal Room.cmd` и [сценарий проверки DirectX 12](SIGNAL-ROOM-TEST-CARD.md).
 
 ## Игровые ресурсы
 

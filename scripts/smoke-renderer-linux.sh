@@ -61,9 +61,9 @@ fi
 if [[ "$signal_room" == 1 ]]; then
     grep -F 'Signal Room: clean shutdown' "$run_dir/engine.log"
     image="$run_dir/save/base/screenshots/signal-room.png"
-    [[ $(magick identify -format '%wx%h' "$image") == 640x480 ]]
+    [[ $(magick identify -format '%wx%h' "$image") == 704x512 ]]
     # Check an area outside the HUD so UI over a black scene fails this test.
-    scene=$(magick "$image" -crop 640x106+0+74 +repage -format '%[fx:mean>0.12]' info:)
+    scene=$(magick "$image" -crop 704x106+0+74 +repage -format '%[fx:mean>0.12]' info:)
     if [[ "$scene" != 1 ]]; then
         echo "Expected a visible room behind the HUD in $image" >&2
         exit 1

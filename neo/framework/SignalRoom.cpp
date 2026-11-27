@@ -7,7 +7,6 @@
 #include "../renderer/GLState.h"
 #include "../libs/imgui/imgui.h"
 
-#include <algorithm>
 #include <array>
 
 bool R_WriteRendererEvidence( const char* filename );
@@ -75,6 +74,8 @@ private:
 	idVec2 position;
 	float yaw = 0.0f;
 	int collected = 0;
+	int frameWidth = 0;
+	int frameHeight = 0;
 	bool won = false;
 	bool loggedCollision = false;
 };
@@ -299,13 +300,27 @@ void SignalRoom::DrawHud( float seconds ) const
 
 void SignalRoom::Draw( int now, float seconds )
 {
+	const int width = renderSystem->GetWidth();
+	const int height = renderSystem->GetHeight();
+	if( width <= 0 || height <= 0 )
+	{
+		return;
+	}
+	if( width != frameWidth || height != frameHeight )
+	{
+		// A resize arrives after the previous swap set up the next frame's crop.
+		// Discard that empty command buffer and start with the new dimensions.
+		renderSystem->SwapCommandBuffers( nullptr, nullptr, nullptr, nullptr, nullptr, nullptr );
+		frameWidth = width;
+		frameHeight = height;
+	}
 	renderView_t view = {};
 	view.viewID = 1;
 	view.vieworg.Set( position.x, position.y, 58 );
 	view.vieworg_weapon = view.vieworg;
 	view.viewaxis = idAngles( 0, yaw, 0 ).ToMat3();
 	view.fov_x = 90.0f;
-	view.fov_y = 2.0f * RAD2DEG( idMath::ATan( float( std::max( renderSystem->GetHeight(), 1 ) ) / std::max( renderSystem->GetWidth(), 1 ) ) );
+	view.fov_y = 2.0f * RAD2DEG( idMath::ATan( float( height ) / width ) );
 	view.time[0] = view.time[1] = now;
 	view.rdflags = RDF_NOSHADOWS | RDF_NOAMBIENT;
 	world->RenderScene( &view );
@@ -330,7 +345,6 @@ void RunSignalRoom()
 	SignalRoom room( material );
 	std::array<bool, K_LAST_KEY> held = {};
 	int previous = Sys_Milliseconds();
-	renderSystem->SwapCommandBuffers( nullptr, nullptr, nullptr, nullptr, nullptr, nullptr );
 	room.Draw( previous, 0.016f );
 	Sys_Printf( "Signal Room: ready\n" );
 	while( !quitRequested )

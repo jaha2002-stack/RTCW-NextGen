@@ -25,6 +25,7 @@ wait_for_event() {
 wait_for_event ready
 window=$(xdotool search --onlyvisible --class '^RBDoom3BFG$')
 xdotool windowfocus --sync "$window"
+xdotool windowsize --sync "$window" 704 512
 
 # The central obstacle must stop forward movement before any module is reached.
 xdotool keydown w
