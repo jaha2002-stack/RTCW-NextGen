@@ -92,8 +92,8 @@ SignalRoom::SignalRoom( const idMaterial* material )
 		for( int y = 0; y < 4; ++y )
 		{
 			const float left = x * 128.0f;
-			const float near = -ROOM_HALF_WIDTH + y * 140.0f;
-			AddBox( idVec3( left, near, -8 ), idVec3( left + 127, near + 139, 0 ), floor[( x + y ) % 2] );
+			const float lateralEdge = -ROOM_HALF_WIDTH + y * 140.0f;
+			AddBox( idVec3( left, lateralEdge, -8 ), idVec3( left + 127, lateralEdge + 139, 0 ), floor[( x + y ) % 2] );
 		}
 	}
 	AddBox( idVec3( -8, -288, -12 ), idVec3( 776, 288, -8 ), wall );

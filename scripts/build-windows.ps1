@@ -48,8 +48,17 @@ try {
     Select-String -Path 'build-windows/CMakeFiles/*/CMakeCXXCompiler.cmake' -Pattern 'set\(CMAKE_CXX_COMPILER_VERSION '
     & $Dxc --version
     if ($LASTEXITCODE -ne 0) { throw 'DXC version check failed.' }
-    & $Cmake --build build-windows --config $Configuration --parallel 2
-    if ($LASTEXITCODE -ne 0) { throw 'Windows build failed.' }
+    $BuildErrors = Join-Path $PWD 'build-windows/compiler-errors.log'
+    & $Cmake --build build-windows --config $Configuration --parallel 2 -- /fl "/flp:LogFile=$BuildErrors;ErrorsOnly"
+    if ($LASTEXITCODE -ne 0) {
+        if ($env:GITHUB_ACTIONS -eq 'true' -and (Test-Path -LiteralPath $BuildErrors)) {
+            Get-Content -LiteralPath $BuildErrors |
+                Where-Object { $_ -match '\berror\b' } |
+                Select-Object -First 8 |
+                ForEach-Object { Write-Host "::error::$($_.Trim().Replace('%', '%25'))" }
+        }
+        throw 'Windows build failed.'
+    }
 }
 finally {
     Pop-Location
